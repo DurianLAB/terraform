@@ -1,6 +1,12 @@
 # root main.tf
 
-provider "lxd" {}
+provider "lxd" {
+ remote {
+    name    = "lxd-server-1"
+    address = "https://142.129.233.95:8443"
+    password = "hongan05"
+  }
+}
 
 module "k3s_cluster_node" {
   source = "./module/lxc-k3s-vm"
