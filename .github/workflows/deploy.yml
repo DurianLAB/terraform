@@ -13,16 +13,23 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Install LXD Client
+        run: |
+          sudo apt update
+          sudo apt install -y lxd-client
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
         id: init
-        run: |
-          docker run --rm -v $(pwd):/workspace -w /workspace/lxc -e TF_VAR_lxd_auth_token=${{ secrets.LXD_AUTH_TOKEN }} canonical/lxd terraform init
-        working-directory: .
+        run: terraform init
+        env:
+          TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
+        working-directory: ./lxc
 
       - name: Terraform Apply
-        run: |
-          docker run --rm -v $(pwd):/workspace -w /workspace/lxc -e TF_VAR_lxd_auth_token=${{ secrets.LXD_AUTH_TOKEN }} canonical/lxd terraform apply -auto-approve
-        working-directory: .
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
+        working-directory: ./lxc
