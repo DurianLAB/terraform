@@ -7,8 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, git-action-runner-vm] # <--- Change this line
-
+    runs-on: [git-action-runner-vm] # <--- Change this line
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
