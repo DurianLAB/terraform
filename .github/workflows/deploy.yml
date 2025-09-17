@@ -24,12 +24,8 @@ jobs:
       - name: Terraform Init
         id: init
         run: terraform init
-        env:
-          TF_VAR_lxd_password: ${{ secrets.LXD_PASSWORD }}
         working-directory: ./lxc
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
-        env:
-          TF_VAR_lxd_password: ${{ secrets.LXD_PASSWORD }}
         working-directory: ./lxc
