@@ -26,4 +26,4 @@ jobs:
           # This environment variable provides the token to Terraform
           TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
         run: terraform apply -auto-approve
-        working-direcotory: ./lxc
+        working-directory: ./lxc
