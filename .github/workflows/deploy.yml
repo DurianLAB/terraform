@@ -19,6 +19,7 @@ jobs:
           sudo lxd init --auto
           sudo mkdir -p /var/lib/lxd
           sudo ln -sf /var/snap/lxd/common/lxd/unix.socket /var/lib/lxd/unix.socket
+          sudo usermod -a -G lxd runner
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
