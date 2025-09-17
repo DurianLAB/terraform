@@ -16,7 +16,7 @@ jobs:
       - name: Install LXD Client
         run: |
           sudo apt update
-          sudo apt install -y lxd-client
+          sudo apt install -y lxd
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
