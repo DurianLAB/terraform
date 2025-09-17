@@ -9,23 +9,30 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+     steps:
+       - name: Checkout Code
+         uses: actions/checkout@v3
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+       - name: Install LXD
+         run: |
+           sudo apt update
+           sudo apt install -y lxd
+           sudo systemctl start lxd
+           sudo lxd init --auto
 
-      - name: Terraform Init
-        id: init
-        run: terraform init
-        env:
-          TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
-        working-directory: ./lxc  # <--- Add this line
+       - name: Setup Terraform
+         uses: hashicorp/setup-terraform@v2
 
-      - name: Terraform Apply
-        env:
-          # This environment variable provides the token to Terraform
-          TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
-        run: terraform apply -auto-approve
-        working-directory: ./lxc
+       - name: Terraform Init
+         id: init
+         run: sudo terraform init
+         env:
+           TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
+         working-directory: ./lxc
+
+       - name: Terraform Apply
+         env:
+           # This environment variable provides the token to Terraform
+           TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
+         run: sudo terraform apply -auto-approve
+         working-directory: ./lxc
