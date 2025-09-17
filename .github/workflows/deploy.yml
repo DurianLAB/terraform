@@ -17,7 +17,10 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
+        id: init
         run: terraform init
+        working-directory: ./lxc  # <--- Add this line
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
+        working-directory: ./lxc  # <--- Add this line
