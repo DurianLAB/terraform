@@ -23,7 +23,7 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: sudo terraform init
+        run: terraform init
         env:
           TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
         working-directory: ./lxc
@@ -32,5 +32,5 @@ jobs:
         env:
           # This environment variable provides the token to Terraform
           TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
-        run: sudo terraform apply -auto-approve
+        run: terraform apply -auto-approve
         working-directory: ./lxc
