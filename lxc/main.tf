@@ -4,7 +4,7 @@ provider "lxd" {
  remote {
     name    = "lxd-server-1"
     address = "https://142.129.233.95:8443"
-    password = "hongan05"
+    token   = var.lxd_auth_token
   }
 }
 
