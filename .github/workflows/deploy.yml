@@ -22,5 +22,8 @@ jobs:
         working-directory: ./lxc  # <--- Add this line
 
       - name: Terraform Apply
+        env:
+          # This environment variable provides the token to Terraform
+          TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
         run: terraform apply -auto-approve
-        working-directory: ./lxc  # <--- Add this line
+        working-direcotory: ./lxc
