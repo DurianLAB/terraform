@@ -1,0 +1,30 @@
+name: Terraform CD to LXD
+
+on:
+  push:
+    branches:
+      - main # Triggers the workflow on pushes to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        id: init
+        env:
+          # Pass the secret to Terraform as an environment variable
+          TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
+        run: terraform init
+
+      - name: Terraform Apply
+        env:
+          # Pass the secret to Terraform as an environment variable
+          TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
+        run: terraform apply -auto-approve
