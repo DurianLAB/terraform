@@ -12,7 +12,7 @@ provider "cloudflare" {
 }
 
 module "cloudflare_dns" {
-  source = "./modules/cloudflare-dns"
+  source = "../modules/cloudflare-dns"
 
   cloudflare_zone_id = var.cloudflare_zone_id
   tunnel_id          = var.tunnel_id
