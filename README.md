@@ -1,12 +1,14 @@
-# LXC K3s Terraform Module
+# LXC K3s Terraform Configuration
 
-This Terraform configuration deploys an LXC virtual machine running K3s (Kubernetes) using macvlan networking for direct host network access.
+This Terraform configuration supports deploying multiple isolated K3s clusters (one per environment) in LXC virtual machines. Each environment (dev, staging, prod) gets its own cluster with separate networking and DNS configuration.
 
 ## Features
 
-- Deploys LXC virtual machine with Ubuntu 22.04
+- Multi-environment support with Terraform workspaces
+- Deploys LXC virtual machines with Ubuntu 22.04
 - Installs and configures K3s
-- Uses macvlan networking for direct host network integration
+- Isolated bridge networks per environment
+- Cloudflare DNS integration
 - Configurable CPU, memory, and storage
 - Cloud-init for initial setup and SSH access
 
@@ -14,43 +16,57 @@ This Terraform configuration deploys an LXC virtual machine running K3s (Kuberne
 
 - Terraform >= 1.0
 - LXD installed and configured on the host
-- Host network interface available for macvlan (default: eth0)
+- Cloudflare account with API token
 - SSH key for ansible user access
 
 ## Usage
 
 1. Clone or copy this repository
-2. Update variables in `main.tf` as needed
-3. Initialize Terraform:
+2. Initialize Terraform:
 
 ```bash
 terraform init
 ```
 
-4. Plan the deployment:
+3. Create and select a workspace for your environment:
 
 ```bash
-terraform plan
+terraform workspace select dev  # or staging, prod
+```
+
+4. Plan the deployment (provide required variables):
+
+```bash
+terraform plan -var="cloudflare_api_token=your_token" -var="cloudflare_zone_id=your_zone" -var="tunnel_id=your_tunnel" -var="ssh_public_key=your_ssh_key"
 ```
 
 5. Apply the configuration:
 
 ```bash
-terraform apply
+terraform apply -var="cloudflare_api_token=your_token" -var="cloudflare_zone_id=your_zone" -var="tunnel_id=your_tunnel" -var="ssh_public_key=your_ssh_key"
 ```
+
+## Environments
+
+The configuration supports three environments via Terraform workspaces:
+
+- **dev**: Development environment with network 10.150.19.0/24
+- **staging**: Staging environment with network 10.150.20.0/24
+- **prod**: Production environment with network 10.150.21.0/24
+
+Each environment gets:
+- Unique cluster name (k3s-{env}-cluster-01)
+- Isolated bridge network
+- Environment-specific DNS subdomains
 
 ## Variables
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| instance_name | Name of the LXC instance | - | Yes |
-| image_alias | LXD image alias | ubuntu-daily:22.04 | Yes |
-| ephemeral | Whether instance is ephemeral | false | No |
-| parent_interface | Host network interface for macvlan | eth0 | No |
-| storage_pool | LXD storage pool name | my-dir-pool | No |
-| cpu_count | Number of CPU cores | 2 | No |
-| memory_gb | Memory in GB | 2 | No |
-| cloud_config | Cloud-init configuration | - | No |
+| Variable | Description | Required |
+|----------|-------------|----------|
+| cloudflare_api_token | Cloudflare API token | Yes |
+| cloudflare_zone_id | Cloudflare Zone ID | Yes |
+| tunnel_id | Cloudflare tunnel ID | Yes |
+| ssh_public_key | SSH public key for ansible user | Yes |
 
 ## Outputs
 
@@ -61,9 +77,7 @@ terraform apply
 
 ## Networking
 
-This configuration uses macvlan networking, which provides the LXC instance with direct access to the host's network. The instance will receive an IP address from the host's network subnet.
-
-**Important:** Ensure the host's network interface supports macvlan and that your network allows multiple MAC addresses on the same port.
+Each environment uses an isolated LXD bridge network with NAT, providing network isolation between environments while allowing internet access.
 
 ## Verification
 
@@ -73,11 +87,11 @@ After deployment, use the provided check commands to verify:
 - SSH key is properly configured
 
 ```bash
-# Check K3s status
-lxc exec <instance_name> -- systemctl status k3s
+# Check K3s status (replace {env} with your workspace)
+lxc exec k3s-{env}-cluster-01 -- systemctl status k3s
 
 # Verify SSH access
-lxc exec <instance_name> -- cat /home/ansible/.ssh/authorized_keys
+lxc exec k3s-{env}-cluster-01 -- cat /home/ansible/.ssh/authorized_keys
 ```
 
 ## Security Notes
@@ -88,6 +102,7 @@ lxc exec <instance_name> -- cat /home/ansible/.ssh/authorized_keys
 
 ## Troubleshooting
 
-- If macvlan doesn't work, check host interface compatibility
-- Ensure LXD has necessary permissions for network operations
-- Verify host firewall allows necessary traffic
+- Ensure LXD has permissions to create networks
+- Check that the storage pool exists
+- Verify Cloudflare credentials are correct
+- Use `terraform workspace list` to see available environments
