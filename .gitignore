@@ -1,0 +1,5 @@
+# Terraform
+.terraform/
+*.tfstate*
+terraform.tfvars
+id_ed25519.pub
