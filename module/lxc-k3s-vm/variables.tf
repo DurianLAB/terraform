@@ -14,7 +14,26 @@ variable "ephemeral" {
   default     = false
 }
 
+variable "network_name" {
+  description = "The name of the LXD bridge network."
+  type        = string
+}
 
+variable "ipv4_address" {
+  description = "IPv4 address range for the bridge network."
+  type        = string
+}
+
+variable "ipv6_address" {
+  description = "IPv6 address range for the bridge network."
+  type        = string
+}
+
+variable "host_listen_ip" {
+  description = "Host listen IP (not used in current config)."
+  type        = string
+  default     = ""
+}
 
 variable "storage_pool" {
   description = "The name of the LXD storage pool for the instance."

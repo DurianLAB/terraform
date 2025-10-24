@@ -6,7 +6,17 @@ terraform {
   }
 }
 
+# Create a bridge network for the environment
+resource "lxd_network" "bridge_network" {
+  name = var.network_name
 
+  config = {
+    "ipv4.address" = var.ipv4_address
+    "ipv6.address" = var.ipv6_address
+    "ipv4.nat"     = "true"
+    "ipv6.nat"     = "true"
+  }
+}
 
 # Define the custom profile to link the instance to the network
 resource "lxd_profile" "instance_profile" {
@@ -24,7 +34,7 @@ resource "lxd_profile" "instance_profile" {
 
     properties = {
       nictype = "bridged"
-      parent  = "lxdbr0"
+      parent  = lxd_network.bridge_network.name
     }
   }
 

@@ -1,11 +1,24 @@
-<<<<<<< HEAD
-terraform {
-  required_providers {
-    cloudflare = {
-      source = "cloudflare/cloudflare"
-      version = "~> 4.0" # Use the latest stable version
+# root main.tf
+
+locals {
+  env_configs = {
+    dev = {
+      ipv4_address = "10.150.19.0/24"
+      ipv6_address = "fd42:474b:622d:259d::/64"
+      server_ip    = "192.168.1.10"  # Example IP, adjust as needed
+    }
+    staging = {
+      ipv4_address = "10.150.20.0/24"
+      ipv6_address = "fd42:474b:622d:259e::/64"
+      server_ip    = "192.168.1.11"
+    }
+    prod = {
+      ipv4_address = "10.150.21.0/24"
+      ipv6_address = "fd42:474b:622d:259f::/64"
+      server_ip    = "207.231.110.98"
     }
   }
+  current_env = lookup(local.env_configs, terraform.workspace, local.env_configs["dev"])
 }
 
 provider "cloudflare" {
@@ -17,26 +30,26 @@ module "cloudflare_dns" {
 
   cloudflare_zone_id = var.cloudflare_zone_id
   tunnel_id          = var.tunnel_id
-  app_subdomain      = "app"
-  server_subdomain   = "dallas-server"
-  server_ip          = "207.231.110.98"
-=======
-# root main.tf
-
+  app_subdomain      = "app-${terraform.workspace}"
+  server_subdomain   = "${terraform.workspace}-server"
+  server_ip          = local.current_env.server_ip
+}
 
 module "k3s_cluster_node" {
   source = "./module/lxc-k3s-vm"
 
-  instance_name    = "k3s-ubuntu-cluster-01"
-  image_alias      = "ubuntu-daily:22.04"
-  ephemeral        = false
-  parent_interface = "enp4s0"
-  storage_pool     = "my-dir-pool"
-  cpu_count        = 2
-  memory_gb        = 2
-    cloud_config   = <<-EOF
+  instance_name = "k3s-${terraform.workspace}-cluster-01"
+  image_alias   = "ubuntu-daily:22.04"
+  ephemeral     = false
+  network_name  = "k3s-${terraform.workspace}-network"
+  ipv4_address  = local.current_env.ipv4_address
+  ipv6_address  = local.current_env.ipv6_address
+  storage_pool  = "my-dir-pool"
+  cpu_count     = 2
+  memory_gb     = 2
+  cloud_config  = <<-EOF
      #cloud-config
-     hostname: k3s-master
+     hostname: k3s-${terraform.workspace}-master
      ssh_pwauth: false
 
      users:
@@ -44,7 +57,7 @@ module "k3s_cluster_node" {
          shell: /bin/bash
          sudo: ALL=(ALL) NOPASSWD:ALL
          ssh_authorized_keys:
-           - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICa5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5 ansible@my-machine
+           - ${var.ssh_public_key}
 
      runcmd:
        - apt-get update -y
@@ -67,5 +80,4 @@ output "check_commands" {
   # Check if SSH public key is present
   lxc exec ${module.k3s_cluster_node.instance_name} -- cat /home/ansible/.ssh/authorized_keys
   EOF
->>>>>>> 820ef66 (generate new branch)
 }
