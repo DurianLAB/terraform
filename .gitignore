@@ -1,5 +1,12 @@
+<<<<<<< HEAD
 # Terraform
 terraform.tfvars
 terraform.tfstate*
 .terraform/
 *.tfstate.backup
+=======
+# Terraform state files and temp files
+*.tfstate
+*.tfstate.backup
+.terraform/
+>>>>>>> c6442c8 (update .gitignore)
