@@ -24,10 +24,6 @@ variable "ipv4_address" {
   type        = string
 }
 
-variable "ipv6_address" {
-  description = "IPv6 address range for the bridge network."
-  type        = string
-}
 
 variable "host_listen_ip" {
   description = "Host listen IP (not used in current config)."

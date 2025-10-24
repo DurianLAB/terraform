@@ -3,37 +3,28 @@
 locals {
   env_configs = {
     dev = {
-      ipv4_address = "10.150.19.0/24"
-      ipv6_address = "fd42:474b:622d:259d::/64"
-      server_ip    = "192.168.1.10"  # Example IP, adjust as needed
+      ipv4_address = "10.150.22.1/24"
+      server_ip    = "10.150.22.2"  # Example IP, adjust as needed
     }
     staging = {
-      ipv4_address = "10.150.20.0/24"
-      ipv6_address = "fd42:474b:622d:259e::/64"
-      server_ip    = "192.168.1.11"
+      ipv4_address = "10.150.20.1/24"
+      server_ip    = "10.150.20.2"
     }
     prod = {
-      ipv4_address = "10.150.21.0/24"
-      ipv6_address = "fd42:474b:622d:259f::/64"
-      server_ip    = "207.231.110.98"
+      ipv4_address = "10.150.21.1/24"
+      server_ip    = "10.150.21.2"
     }
   }
   current_env = lookup(local.env_configs, terraform.workspace, local.env_configs["dev"])
 }
 
-
-
-
-
 module "k3s_cluster_node" {
   source = "./module/lxc-k3s-vm"
-
   instance_name = "k3s-${terraform.workspace}-cluster-01"
   image_alias   = "ubuntu-daily:22.04"
   ephemeral     = false
-  network_name  = "k3s-${terraform.workspace}-network"
+  network_name  = "k3s-${terraform.workspace}-net"
   ipv4_address  = local.current_env.ipv4_address
-  ipv6_address  = local.current_env.ipv6_address
   storage_pool  = "my-dir-pool"
   cpu_count     = 2
   memory_gb     = 2
