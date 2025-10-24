@@ -12,9 +12,7 @@ resource "lxd_network" "bridge_network" {
 
   config = {
     "ipv4.address" = var.ipv4_address
-    "ipv6.address" = var.ipv6_address
     "ipv4.nat"     = "true"
-    "ipv6.nat"     = "true"
   }
 }
 
