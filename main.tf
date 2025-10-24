@@ -21,19 +21,9 @@ locals {
   current_env = lookup(local.env_configs, terraform.workspace, local.env_configs["dev"])
 }
 
-provider "cloudflare" {
-  api_token = var.cloudflare_api_token
-}
 
-module "cloudflare_dns" {
-  source = "./modules/cloudflare-dns"
 
-  cloudflare_zone_id = var.cloudflare_zone_id
-  tunnel_id          = var.tunnel_id
-  app_subdomain      = "app-${terraform.workspace}"
-  server_subdomain   = "${terraform.workspace}-server"
-  server_ip          = local.current_env.server_ip
-}
+
 
 module "k3s_cluster_node" {
   source = "./module/lxc-k3s-vm"
