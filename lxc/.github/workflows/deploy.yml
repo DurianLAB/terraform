@@ -26,10 +26,19 @@ jobs:
         working-directory: .
 
      steps:
-       - name: Checkout
-         uses: actions/checkout@v4
+        - name: Checkout
+          uses: actions/checkout@v4
 
-       - name: Setup LXD
+        - name: Copy Terraform files to remote
+          uses: appleboy/scp-action@v0.1.4
+          with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USERNAME }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            source: "lxc/"
+            target: "~/"
+
+        - name: Setup LXD
          run: |
            sudo snap install lxd
            sudo lxd init --auto
@@ -55,13 +64,21 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
-      - name: Terraform Plan
-        id: plan
-        if: github.event_name == 'pull_request'
-        run: terraform plan -no-color -input=false
-        env:
-          TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
-        continue-on-error: true
+       - name: Terraform Init and Plan via SSH
+         id: plan
+         if: github.event_name == 'pull_request'
+         uses: appleboy/ssh-action@v1.0.0
+         with:
+           host: ${{ secrets.SSH_HOST }}
+           username: ${{ secrets.SSH_USERNAME }}
+           key: ${{ secrets.SSH_PRIVATE_KEY }}
+           script: |
+             cd lxc
+             terraform init
+             terraform plan -no-color -input=false
+         env:
+           TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
+         continue-on-error: true
 
       - name: Update Pull Request
         uses: actions/github-script@v7
@@ -95,8 +112,15 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false
-        env:
-          TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
+       - name: Terraform Apply via SSH
+         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+         uses: appleboy/ssh-action@v1.0.0
+         with:
+           host: ${{ secrets.SSH_HOST }}
+           username: ${{ secrets.SSH_USERNAME }}
+           key: ${{ secrets.SSH_PRIVATE_KEY }}
+           script: |
+             cd lxc
+             terraform apply -auto-approve -input=false
+         env:
+           TF_VAR_lxd_auth_token: ${{ secrets.LXD_AUTH_TOKEN }}
