@@ -41,8 +41,10 @@ module "k3s_cluster_node" {
            - ${var.ssh_public_key}
 
      runcmd:
-       - apt-get update -y
-       - apt-get install -y python3 python3-pip apt-transport-https ca-certificates curl gnupg
+        - apt-get update -y
+        - apt-get install -y openssh-server python3 python3-pip apt-transport-https ca-certificates curl gnupg
+        - systemctl enable ssh
+        - systemctl start ssh
        - ln -sf /usr/bin/python3 /usr/bin/python
        - curl -sfL https://get.k3s.io | sh -
    EOF
