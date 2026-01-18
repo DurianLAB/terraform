@@ -1,7 +1,6 @@
 # LXC K3s Terraform Configuration
 
-[![GitHub stars](https://img.shields.io/github/stars/DurianLAB/terraform.svg)](https://github.com/DurianLAB/terraform/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/DurianLAB/terraform.svg)](https://github.com/DurianLAB/terraform/network)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fdurianlab.tech)](https://durianlab.tech)
 [![GitHub issues](https://img.shields.io/github/issues/DurianLAB/terraform.svg)](https://github.com/DurianLAB/terraform/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/DurianLAB/terraform.svg)](https://github.com/DurianLAB/terraform/pulls)
 [![License: Custom](https://img.shields.io/badge/License-Custom%20Non--Commercial-blue.svg)](https://github.com/DurianLAB/terraform/blob/main/LICENSE)
