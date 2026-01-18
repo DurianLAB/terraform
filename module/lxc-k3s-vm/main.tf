@@ -6,13 +6,13 @@ terraform {
   }
 }
 
-# Create a bridge network for the environment
-resource "lxd_network" "bridge_network" {
+# Create a macvlan network for the environment
+resource "lxd_network" "macvlan_network" {
   name = var.network_name
+  type = "macvlan"
 
   config = {
-    "ipv4.address" = var.ipv4_address
-    "ipv4.nat"     = "true"
+    parent = var.parent_interface
   }
 }
 
@@ -26,15 +26,14 @@ resource "lxd_profile" "instance_profile" {
     "limits.memory"  = "${var.memory_gb}GB"
   }
 
-  device {
-    name = "eth0"
-    type = "nic"
+   device {
+     name = "eth0"
+     type = "nic"
 
-    properties = {
-      nictype = "bridged"
-      parent  = lxd_network.bridge_network.name
-    }
-  }
+     properties = {
+       network = lxd_network.macvlan_network.name
+     }
+   }
 
   device {
     type = "disk"
