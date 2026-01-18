@@ -1,1 +1,0 @@
-{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"k3s_cluster_node","Source":"./module/lxc-k3s-vm","Dir":"module/lxc-k3s-vm"}]}

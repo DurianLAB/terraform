@@ -25,7 +25,6 @@ Developed by [DurianLAB](https://durianlab.tech/).
 │   ├── bridge-networking/     # Development scenario with bridge networks
 │   └── macvlan-networking/    # Production scenario with macvlan networks
 ├── test-macvlan-*.sh          # Connectivity testing scripts
-├── inventory*.ini             # Ansible inventory files
 ├── TROUBLESHOOTING.md         # Network configuration troubleshooting
 └── README.md                  # This file
 ```
@@ -60,7 +59,6 @@ Developed by [DurianLAB](https://durianlab.tech/).
 - Terraform >= 1.0
 - LXD installed and configured on the host
 - SSH key for ansible user access
-- Ansible (for testing scripts)
 
 ## Quick Start
 
@@ -84,14 +82,12 @@ See `scenarios/macvlan-networking/README.md` for detailed information.
 
 ## Testing and Verification
 
-### Automated Testing
+### Manual Testing
 ```bash
-# Run comprehensive connectivity tests
-ansible-playbook test-macvlan-ansible.yml
-
-# Or use individual test scripts
+# Use the provided test scripts
 ./test-macvlan-connectivity.sh
 ./test-external-connectivity.sh
+./vm-connectivity-test.sh
 ```
 
 ### Manual Verification
@@ -152,14 +148,14 @@ lxc exec k3s-{env}-cluster-01 -- cat /home/ansible/.ssh/authorized_keys
 For macvlan network deployments, use the provided test scripts to verify network connectivity and service accessibility:
 
 ```bash
-# Run comprehensive connectivity test via Ansible
-ansible-playbook test-macvlan-ansible.yml
-
-# Or run the connectivity test script directly
+# Run the connectivity test script
 ./test-macvlan-connectivity.sh
 
 # Test from external clients on the network
 ./test-external-connectivity.sh
+
+# Run comprehensive test inside VM
+./vm-connectivity-test.sh
 ```
 
 The test scripts verify:
