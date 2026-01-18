@@ -1,3 +1,7 @@
+# Macvlan Networking Scenario - Production Environment
+# This configuration uses LXD macvlan networks for direct external access
+# VMs are accessible from external network but isolated from host
+
 terraform {
   required_providers {
     lxd = {
@@ -26,14 +30,14 @@ resource "lxd_profile" "instance_profile" {
     "limits.memory"  = "${var.memory_gb}GB"
   }
 
-   device {
-     name = "eth0"
-     type = "nic"
+  device {
+    name = "eth0"
+    type = "nic"
 
-     properties = {
-       network = lxd_network.macvlan_network.name
-     }
-   }
+    properties = {
+      network = lxd_network.macvlan_network.name
+    }
+  }
 
   device {
     type = "disk"
@@ -54,5 +58,3 @@ resource "lxd_instance" "app_instance" {
   profiles  = [lxd_profile.instance_profile.name]
   type      = "virtual-machine"
 }
-
-

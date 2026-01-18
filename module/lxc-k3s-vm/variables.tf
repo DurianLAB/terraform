@@ -19,10 +19,7 @@ variable "network_name" {
   type        = string
 }
 
-variable "ipv4_address" {
-  description = "IPv4 address range for the bridge network."
-  type        = string
-}
+
 
 
 variable "host_listen_ip" {

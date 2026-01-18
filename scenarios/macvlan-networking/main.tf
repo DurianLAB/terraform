@@ -29,23 +29,23 @@ module "k3s_cluster_node" {
   cpu_count     = 2
   memory_gb     = 2
   cloud_config  = <<-EOF
-      #cloud-config
-      hostname: k3s-${terraform.workspace}-master
-      ssh_pwauth: false
+     #cloud-config
+     hostname: k3s-${terraform.workspace}-master
+     ssh_pwauth: false
 
-      users:
-        - name: ansible
-          shell: /bin/bash
-          sudo: ALL=(ALL) NOPASSWD:ALL
-          ssh_authorized_keys:
-            - ${var.ssh_public_key}
+     users:
+       - name: ansible
+         shell: /bin/bash
+         sudo: ALL=(ALL) NOPASSWD:ALL
+         ssh_authorized_keys:
+           - ${var.ssh_public_key}
 
-      runcmd:
-        - apt-get update -y
-        - apt-get install -y python3 python3-pip apt-transport-https ca-certificates curl gnupg
-        - ln -sf /usr/bin/python3 /usr/bin/python
-        - curl -sfL https://get.k3s.io | sh -
-    EOF
+     runcmd:
+       - apt-get update -y
+       - apt-get install -y python3 python3-pip apt-transport-https ca-certificates curl gnupg
+       - ln -sf /usr/bin/python3 /usr/bin/python
+       - curl -sfL https://get.k3s.io | sh -
+   EOF
 }
 
 output "k3s_node_ip" {

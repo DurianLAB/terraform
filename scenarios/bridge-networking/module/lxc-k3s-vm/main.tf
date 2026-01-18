@@ -1,3 +1,7 @@
+# Bridge Networking Scenario - Development/Testing Environment
+# This configuration uses LXD bridge networks for isolated environments
+# VMs are accessible from the host but require NAT for external access
+
 terraform {
   required_providers {
     lxd = {
@@ -6,13 +10,15 @@ terraform {
   }
 }
 
-# Create a macvlan network for the environment
-resource "lxd_network" "macvlan_network" {
+# Create a bridge network for the environment
+resource "lxd_network" "bridge_network" {
   name = var.network_name
-  type = "macvlan"
+  type = "bridge"
 
   config = {
-    parent = var.parent_interface
+    "ipv4.address" = var.ipv4_address
+    "ipv4.nat"     = "true"
+    "ipv6.address" = "none"
   }
 }
 
@@ -26,14 +32,15 @@ resource "lxd_profile" "instance_profile" {
     "limits.memory"  = "${var.memory_gb}GB"
   }
 
-   device {
-     name = "eth0"
-     type = "nic"
+  device {
+    name = "eth0"
+    type = "nic"
 
-     properties = {
-       network = lxd_network.macvlan_network.name
-     }
-   }
+    properties = {
+      nictype = "bridged"
+      parent  = lxd_network.bridge_network.name
+    }
+  }
 
   device {
     type = "disk"
@@ -54,5 +61,3 @@ resource "lxd_instance" "app_instance" {
   profiles  = [lxd_profile.instance_profile.name]
   type      = "virtual-machine"
 }
-
-

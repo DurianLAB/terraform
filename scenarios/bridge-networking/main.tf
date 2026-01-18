@@ -24,28 +24,28 @@ module "k3s_cluster_node" {
   image_alias   = "ubuntu-daily:22.04"
   ephemeral     = false
   network_name  = "k3s-${terraform.workspace}-net"
-  parent_interface = "enp4s0"
+  ipv4_address  = local.current_env.ipv4_address
   storage_pool  = "my-dir-pool"
   cpu_count     = 2
   memory_gb     = 2
   cloud_config  = <<-EOF
-      #cloud-config
-      hostname: k3s-${terraform.workspace}-master
-      ssh_pwauth: false
+     #cloud-config
+     hostname: k3s-${terraform.workspace}-master
+     ssh_pwauth: false
 
-      users:
-        - name: ansible
-          shell: /bin/bash
-          sudo: ALL=(ALL) NOPASSWD:ALL
-          ssh_authorized_keys:
-            - ${var.ssh_public_key}
+     users:
+       - name: ansible
+         shell: /bin/bash
+         sudo: ALL=(ALL) NOPASSWD:ALL
+         ssh_authorized_keys:
+           - ${var.ssh_public_key}
 
-      runcmd:
-        - apt-get update -y
-        - apt-get install -y python3 python3-pip apt-transport-https ca-certificates curl gnupg
-        - ln -sf /usr/bin/python3 /usr/bin/python
-        - curl -sfL https://get.k3s.io | sh -
-    EOF
+     runcmd:
+       - apt-get update -y
+       - apt-get install -y python3 python3-pip apt-transport-https ca-certificates curl gnupg
+       - ln -sf /usr/bin/python3 /usr/bin/python
+       - curl -sfL https://get.k3s.io | sh -
+   EOF
 }
 
 output "k3s_node_ip" {
