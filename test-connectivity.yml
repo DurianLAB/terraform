@@ -1,0 +1,117 @@
+---
+- name: Test LXD Macvlan Network Connectivity and Services
+  hosts: k3s_cluster
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - name: Display connection info
+      debug:
+        msg: "Connected to {{ inventory_hostname }} at {{ ansible_default_ipv4.address }}"
+
+    - name: Test basic connectivity
+      ping:
+
+    - name: Check network interfaces
+      command: ip addr show
+      register: network_interfaces
+      changed_when: false
+
+    - name: Display network interfaces
+      debug:
+        var: network_interfaces.stdout_lines
+
+    - name: Check routing table
+      command: ip route show
+      register: routing_table
+      changed_when: false
+
+    - name: Display routing table
+      debug:
+        var: routing_table.stdout_lines
+
+    - name: Check SSH service status
+      systemd:
+        name: ssh
+        state: started
+      register: ssh_status
+
+    - name: Display SSH service status
+      debug:
+        msg: "SSH service is {{ ssh_status.status.SubState }}"
+
+    - name: Check K3s service status
+      systemd:
+        name: k3s
+        state: started
+      register: k3s_status
+
+    - name: Display K3s service status
+      debug:
+        msg: "K3s service is {{ k3s_status.status.SubState }}"
+
+    - name: Check listening ports
+      command: netstat -tlnp
+      register: listening_ports
+      changed_when: false
+
+    - name: Display listening ports
+      debug:
+        var: listening_ports.stdout_lines
+
+    - name: Test external connectivity (ping gateway)
+      command: ping -c 3 192.168.1.1
+      register: ping_gateway
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Display ping gateway result
+      debug:
+        msg: "Gateway ping: {{ ping_gateway.stdout }}"
+
+    - name: Test DNS resolution
+      command: nslookup google.com
+      register: dns_test
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Display DNS test result
+      debug:
+        msg: "DNS test: {{ 'SUCCESS' if dns_test.rc == 0 else 'FAILED' }}"
+
+    - name: Check K3s cluster status
+      command: k3s kubectl get nodes
+      register: k3s_nodes
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Display K3s nodes
+      debug:
+        var: k3s_nodes.stdout_lines
+
+    - name: Check K3s API server port accessibility
+      command: curl -k --connect-timeout 5 https://localhost:6443/version
+      register: api_test
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Display API test result
+      debug:
+        msg: "K3s API test: {{ 'SUCCESS' if api_test.rc == 0 else 'FAILED' }}"
+
+    - name: Create connectivity test summary
+      set_fact:
+        connectivity_summary: |
+          === LXD Macvlan Network Test Summary ===
+          Hostname: {{ inventory_hostname }}
+          IP Address: {{ ansible_default_ipv4.address }}
+          SSH Service: {{ ssh_status.status.SubState }}
+          K3s Service: {{ k3s_status.status.SubState }}
+          Gateway Ping: {{ 'SUCCESS' if ping_gateway.rc == 0 else 'FAILED' }}
+          DNS Resolution: {{ 'SUCCESS' if dns_test.rc == 0 else 'FAILED' }}
+          K3s API Access: {{ 'SUCCESS' if api_test.rc == 0 else 'FAILED' }}
+          External Access: Macvlan provides direct L2 access to network clients
+
+    - name: Display final summary
+      debug:
+        var: connectivity_summary

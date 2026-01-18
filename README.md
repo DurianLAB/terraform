@@ -13,11 +13,11 @@ This repository contains Terraform configurations for deploying K3s clusters in 
 
 This project is licensed under a Custom Non-Commercial License - see the [LICENSE](LICENSE) file for details. This license allows free sharing and modification for non-commercial use but prohibits commercial sale or commercial exploitation.
 
-## GitHub Repository
+Developed by [DurianLAB](https://durianlab.tech/).
 
-This repository is hosted at: **https://github.com/DurianLAB/terraform**
 
-The badges above show live statistics from the GitHub repository. If you're viewing this locally, the badges will display data from the DurianLAB/terraform repository on GitHub.
+
+
 
 ## Repository Structure
 
