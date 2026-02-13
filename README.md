@@ -22,6 +22,7 @@ Developed by [DurianLAB](https://durianlab.tech/).
 ├── scenarios/                   # Legacy scenario configurations (deprecated)
 │   ├── bridge-networking/
 │   └── macvlan-networking/
+├── terraform-idempotent.sh      # Idempotent wrapper script
 ├── test-macvlan-*.sh            # Connectivity testing scripts
 ├── TROUBLESHOOTING.md           # Network configuration troubleshooting
 └── README.md                    # This file
@@ -74,16 +75,21 @@ The configuration supports two network types via the `network_type` variable:
    terraform workspace select prod
    ```
 
-3. Deploy with bridge networking:
+3. Use the idempotent wrapper script (recommended):
    ```bash
-   terraform plan -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=bridge"
-   terraform apply -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=bridge"
+   # Deploy with bridge networking
+   ./terraform-idempotent.sh apply -var "ssh_public_key=$(cat id_ed25519.pub)" -var "network_type=bridge"
+   
+   # Deploy with macvlan networking
+   ./terraform-idempotent.sh apply -var "ssh_public_key=$(cat id_ed25519.pub)" -var "network_type=macvlan"
+   
+   # Destroy
+   ./terraform-idempotent.sh destroy -var "ssh_public_key=$(cat id_ed25519.pub)"
    ```
 
-4. Deploy with macvlan networking:
+   Or use terraform directly (may require manual import for existing resources):
    ```bash
-   terraform plan -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=macvlan"
-   terraform apply -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=macvlan"
+   terraform apply -var="ssh_public_key=$(cat id_ed25519.pub)" -var="network_type=bridge"
    ```
 
 ## Environment Configuration

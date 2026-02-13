@@ -12,6 +12,66 @@ terraform apply -var="ssh_public_key=$(cat key.pub)" -var="network_type=bridge"
 terraform apply -var="ssh_public_key=$(cat key.pub)" -var="network_type=macvlan"
 ```
 
+## Common Errors
+
+### Network Already Exists
+
+**Error:**
+```
+Error: Failed to create network "k3s-dev-net"
+The network already exists
+```
+
+**Cause:** The network was created previously (possibly manually or by an older terraform run) and terraform is trying to recreate it.
+
+**Solution:**
+
+Run `terraform import` to bring existing network into state:
+
+```bash
+# For bridge network
+terraform import 'module.k3s_cluster_node.lxd_network.bridge_network[0]' k3s-dev-net
+
+# For macvlan network
+terraform import 'module.k3s_cluster_node.lxd_network.network[0]' k3s-prod-net
+```
+
+Then run terraform apply again:
+```bash
+terraform apply -var="ssh_public_key=$(cat key.pub)" -var="network_type=bridge
+```
+
+### Profile Already Exists
+
+**Error:**
+```
+Error: Failed to create profile "k3s-dev-cluster-01-profile"
+The profile already exists
+```
+
+**Solution:**
+
+```bash
+# Import the existing profile
+terraform import 'module.k3s_cluster_node.lxd_profile.instance_profile' k3s-dev-cluster-01-profile
+terraform apply ...
+```
+
+If profile state is inconsistent, delete and re-import:
+```bash
+lxc profile delete k3s-dev-cluster-01-profile
+terraform state rm module.k3s_cluster_node.lxd_profile.instance_profile
+terraform apply ...
+```
+
+### Instance Already Exists
+
+If the VM instance already exists:
+
+```bash
+terraform import 'module.k3s_cluster_node.lxd_instance.app_instance' k3s-dev-cluster-01
+```
+
 ## Issue Summary
 Terraform deployments of LXD virtual machines fail during startup with the error: `Failed to start device "eth0": Parent device 'k3s-prod-net' doesn't exist`, even though the LXD network exists and works correctly for manual container/VM creation.
 
@@ -137,6 +197,7 @@ terraform apply -var="ssh_public_key=$(cat <key-file>)" -auto-approve
    ```
 
 ## Prevention Measures
+
 1. **Use managed networks properly:** Always use `network = <network-name>` for LXD managed networks instead of manual `nictype` and `parent` configuration.
 
 2. **Test configurations manually:** Before deploying via Terraform, test network configurations manually with `lxc launch --network <network>`.
@@ -144,6 +205,8 @@ terraform apply -var="ssh_public_key=$(cat <key-file>)" -auto-approve
 3. **Version control network configurations:** Keep network setup and instance configurations in separate, well-documented Terraform modules.
 
 4. **Monitor Terraform state:** Regularly check Terraform state consistency and clean up orphaned resources.
+
+5. **Ignore existing network config changes:** The module includes `lifecycle { ignore_changes = [config] }` to gracefully handle existing networks with different configurations. This prevents terraform from trying to recreate or update networks that already exist.
 
 ## Key Differences: Manual vs Terraform Network Configuration
 

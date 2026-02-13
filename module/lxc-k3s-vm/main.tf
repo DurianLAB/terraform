@@ -15,6 +15,10 @@ resource "lxd_network" "network" {
   config = var.network_type == "macvlan" ? {
     parent = var.parent_interface
   } : {}
+
+  lifecycle {
+    ignore_changes = [config]
+  }
 }
 
 resource "lxd_network" "bridge_network" {
@@ -26,6 +30,10 @@ resource "lxd_network" "bridge_network" {
   config = {
     "ipv4.address" = var.ipv4_address
     "ipv4.dhcp"   = "true"
+  }
+
+  lifecycle {
+    ignore_changes = [config]
   }
 }
 
@@ -64,4 +72,6 @@ resource "lxd_instance" "app_instance" {
   ephemeral = var.ephemeral
   profiles  = [lxd_profile.instance_profile.name]
   type      = "virtual-machine"
+
+  wait_for_network = true
 }
