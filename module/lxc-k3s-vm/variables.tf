@@ -1,3 +1,9 @@
+variable "network_type" {
+  description = "Type of network: bridge or macvlan"
+  type        = string
+  default     = "bridge"
+}
+
 variable "instance_name" {
   description = "The name of the LXD instance."
   type        = string
@@ -15,8 +21,14 @@ variable "ephemeral" {
 }
 
 variable "network_name" {
-  description = "The name of the LXD bridge network."
+  description = "The name of the LXD network."
   type        = string
+}
+
+variable "ipv4_address" {
+  description = "IPv4 address for bridge network (e.g., 10.150.22.1/24)"
+  type        = string
+  default     = ""
 }
 
 

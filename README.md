@@ -6,7 +6,7 @@
 [![License: Custom](https://img.shields.io/badge/License-Custom%20Non--Commercial-blue.svg)](https://github.com/DurianLAB/terraform/blob/main/LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/DurianLAB/terraform.svg)](https://github.com/DurianLAB/terraform/commits/main)
 
-This repository contains Terraform configurations for deploying K3s clusters in LXD virtual machines with two different networking scenarios.
+This repository contains Terraform configurations for deploying K3s clusters in LXD virtual machines with flexible networking options (bridge or macvlan).
 
 ## License
 
@@ -14,43 +14,43 @@ This project is licensed under a Custom Non-Commercial License - see the [LICENS
 
 Developed by [DurianLAB](https://durianlab.tech/).
 
-
-
-
-
 ## Repository Structure
 
 ```
-├── scenarios/
-│   ├── bridge-networking/     # Development scenario with bridge networks
-│   └── macvlan-networking/    # Production scenario with macvlan networks
-├── test-macvlan-*.sh          # Connectivity testing scripts
-├── TROUBLESHOOTING.md         # Network configuration troubleshooting
-└── README.md                  # This file
+├── module/
+│   └── lxc-k3s-vm/              # Shared module for LXC K3s VM
+├── scenarios/                   # Legacy scenario configurations (deprecated)
+│   ├── bridge-networking/
+│   └── macvlan-networking/
+├── test-macvlan-*.sh            # Connectivity testing scripts
+├── TROUBLESHOOTING.md           # Network configuration troubleshooting
+└── README.md                    # This file
 ```
 
-## Networking Scenarios
+## Networking Options
 
-### Bridge Networking (`scenarios/bridge-networking/`)
+The configuration supports two network types via the `network_type` variable:
+
+### Bridge Networking
 - **Use Case**: Development and testing environments
 - **Network Type**: LXD bridge with NAT
 - **Host Access**: Direct communication with VMs
 - **External Access**: Requires port forwarding
 - **IP Range**: Isolated subnet (10.150.x.x)
 
-### Macvlan Networking (`scenarios/macvlan-networking/`)
+### Macvlan Networking
 - **Use Case**: Production deployments
 - **Network Type**: LXD macvlan for direct access
 - **Host Access**: Isolated from host (L2 limitation)
 - **External Access**: Direct from network clients
-- **IP Range**: Host subnet (192.168.1.x)
+- **IP Range**: Host subnet
 
 ## Features
 
-- Multi-environment support with Terraform workspaces
+- Unified configuration supporting both bridge and macvlan networking
+- Multi-environment support with Terraform workspaces (dev, staging, prod)
 - Deploys LXC virtual machines with Ubuntu 22.04
 - Installs and configures K3s
-- Two complete networking scenarios
 - Configurable CPU, memory, and storage
 - Cloud-init for initial setup and SSH access
 
@@ -62,23 +62,39 @@ Developed by [DurianLAB](https://durianlab.tech/).
 
 ## Quick Start
 
-1. Choose your networking scenario:
-   - **Development**: `cd scenarios/bridge-networking`
-   - **Production**: `cd scenarios/macvlan-networking`
-
-2. Initialize and deploy:
+1. Initialize Terraform:
    ```bash
    terraform init
-   terraform workspace select <env>  # dev, staging, or prod
-   terraform plan -var="ssh_public_key=$(cat ../../id_ed25519.pub)"
-   terraform apply -var="ssh_public_key=$(cat ../../id_ed25519.pub)"
    ```
 
-### Bridge Scenario (`scenarios/bridge-networking/`)
-See `scenarios/bridge-networking/README.md` for detailed information.
+2. Select workspace (dev, staging, or prod):
+   ```bash
+   terraform workspace select dev
+   # or
+   terraform workspace select prod
+   ```
 
-### Macvlan Scenario (`scenarios/macvlan-networking/`)
-See `scenarios/macvlan-networking/README.md` for detailed information.
+3. Deploy with bridge networking:
+   ```bash
+   terraform plan -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=bridge"
+   terraform apply -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=bridge"
+   ```
+
+4. Deploy with macvlan networking:
+   ```bash
+   terraform plan -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=macvlan"
+   terraform apply -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=macvlan"
+   ```
+
+## Environment Configuration
+
+Each workspace has its own network configuration:
+
+| Workspace | Bridge IPv4 | Macvlan Parent |
+|-----------|-------------|----------------|
+| dev       | 10.150.22.1/24 | enp4s0     |
+| staging   | 10.150.20.1/24 | enp4s0     |
+| prod      | 10.150.21.1/24 | enp4s0     |
 
 ## Testing and Verification
 
@@ -105,9 +121,10 @@ lxc network show k3s-{env}-net
 
 ## Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| ssh_public_key | SSH public key for ansible user | Yes |
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| ssh_public_key | SSH public key for ansible user | Yes | - |
+| network_type | Network type: bridge or macvlan | No | bridge |
 
 ## Outputs
 
@@ -115,56 +132,6 @@ lxc network show k3s-{env}-net
 |--------|-------------|
 | k3s_node_ip | IPv4 address of the K3s node |
 | check_commands | Commands to verify K3s and SSH setup |
-
-### Current Network Configuration
-
-The current deployment uses macvlan networks. To verify:
-
-```bash
-# Check network type
-lxc network show k3s-{env}-net | grep "type:"
-
-# Check VM IP assignment
-lxc list | grep k3s-{env}-cluster-01
-```
-
-## Verification
-
-After deployment, use the provided check commands to verify:
-
-- K3s service is running
-- SSH key is properly configured
-
-```bash
-# Check K3s status (replace {env} with your workspace)
-lxc exec k3s-{env}-cluster-01 -- systemctl status k3s
-
-# Verify SSH access
-lxc exec k3s-{env}-cluster-01 -- cat /home/ansible/.ssh/authorized_keys
-```
-
-### Macvlan Network Testing
-
-For macvlan network deployments, use the provided test scripts to verify network connectivity and service accessibility:
-
-```bash
-# Run the connectivity test script
-./test-macvlan-connectivity.sh
-
-# Test from external clients on the network
-./test-external-connectivity.sh
-
-# Run comprehensive test inside VM
-./vm-connectivity-test.sh
-```
-
-The test scripts verify:
-- VM network configuration and routing
-- External connectivity to gateway and internet
-- Service availability (SSH, K3s)
-- Host isolation (expected macvlan behavior)
-
-Note: These tests are specific to macvlan deployments where VMs need direct external network access.
 
 ## Security Notes
 
@@ -178,16 +145,9 @@ Contributions are welcome! Please feel free to submit a Pull Request. Here's how
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+3. Commit your changes (`git commit -m 'Add some amazing-feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## Important Notes
-
-- **Scenario Isolation**: Each scenario folder (`bridge-networking`, `macvlan-networking`) contains completely separate Terraform configurations with their own state files
-- **No Switching Required**: Choose the appropriate scenario folder for your use case - no manual switching needed
-- **Testing Scripts**: The test scripts in the root directory work with both scenarios
-- **Network Conflicts**: Do not deploy both scenarios simultaneously as they may create conflicting networks
 
 ## Troubleshooting
 

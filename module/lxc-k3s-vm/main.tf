@@ -6,17 +6,29 @@ terraform {
   }
 }
 
-# Create a macvlan network for the environment
-resource "lxd_network" "macvlan_network" {
+resource "lxd_network" "network" {
   name = var.network_name
-  type = "macvlan"
+  type = var.network_type
+
+  count = var.network_type == "macvlan" ? 1 : 0
+
+  config = var.network_type == "macvlan" ? {
+    parent = var.parent_interface
+  } : {}
+}
+
+resource "lxd_network" "bridge_network" {
+  name = var.network_name
+  type = "bridge"
+
+  count = var.network_type == "bridge" ? 1 : 0
 
   config = {
-    parent = var.parent_interface
+    "ipv4.address" = var.ipv4_address
+    "ipv4.dhcp"   = "true"
   }
 }
 
-# Define the custom profile to link the instance to the network
 resource "lxd_profile" "instance_profile" {
   name = "${var.instance_name}-profile"
 
@@ -26,14 +38,14 @@ resource "lxd_profile" "instance_profile" {
     "limits.memory"  = "${var.memory_gb}GB"
   }
 
-   device {
-     name = "eth0"
-     type = "nic"
+  device {
+    name = "eth0"
+    type = "nic"
 
-     properties = {
-       network = lxd_network.macvlan_network.name
-     }
-   }
+    properties = {
+      network = var.network_type == "macvlan" ? lxd_network.network[0].name : lxd_network.bridge_network[0].name
+    }
+  }
 
   device {
     type = "disk"
@@ -46,7 +58,6 @@ resource "lxd_profile" "instance_profile" {
   }
 }
 
-# Create the VM instance
 resource "lxd_instance" "app_instance" {
   name      = var.instance_name
   image     = var.image_alias
@@ -54,5 +65,3 @@ resource "lxd_instance" "app_instance" {
   profiles  = [lxd_profile.instance_profile.name]
   type      = "virtual-machine"
 }
-
-

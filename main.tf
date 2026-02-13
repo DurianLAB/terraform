@@ -3,16 +3,16 @@
 locals {
   env_configs = {
     dev = {
-      ipv4_address = "10.150.22.1/24"
-      server_ip    = "10.150.22.2"  # Example IP, adjust as needed
+      bridge_ipv4_address = "10.150.22.1/24"
+      macvlan_parent     = "enp4s0"
     }
     staging = {
-      ipv4_address = "10.150.20.1/24"
-      server_ip    = "10.150.20.2"
+      bridge_ipv4_address = "10.150.20.1/24"
+      macvlan_parent     = "enp4s0"
     }
     prod = {
-      ipv4_address = "10.150.21.1/24"
-      server_ip    = "10.150.21.2"
+      bridge_ipv4_address = "10.150.21.1/24"
+      macvlan_parent     = "enp4s0"
     }
   }
   current_env = lookup(local.env_configs, terraform.workspace, local.env_configs["dev"])
@@ -20,15 +20,17 @@ locals {
 
 module "k3s_cluster_node" {
   source = "./module/lxc-k3s-vm"
-  instance_name = "k3s-${terraform.workspace}-cluster-01"
-  image_alias   = "ubuntu-daily:22.04"
-  ephemeral     = false
-  network_name  = "k3s-${terraform.workspace}-net"
-  parent_interface = "enp4s0"
-  storage_pool  = "my-dir-pool"
-  cpu_count     = 2
-  memory_gb     = 2
-  cloud_config  = <<-EOF
+  instance_name    = "k3s-${terraform.workspace}-cluster-01"
+  image_alias      = "ubuntu-daily:22.04"
+  ephemeral        = false
+  network_type     = var.network_type
+  network_name     = "k3s-${terraform.workspace}-net"
+  ipv4_address     = var.network_type == "bridge" ? local.current_env.bridge_ipv4_address : ""
+  parent_interface = var.network_type == "macvlan" ? local.current_env.macvlan_parent : ""
+  storage_pool     = "my-dir-pool"
+  cpu_count        = 2
+  memory_gb        = 2
+  cloud_config     = <<-EOF
       #cloud-config
       hostname: k3s-${terraform.workspace}-master
       ssh_pwauth: false

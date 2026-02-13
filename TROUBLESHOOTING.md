@@ -1,4 +1,16 @@
-# LXD Macvlan Network Configuration Issue - Troubleshooting Guide
+# LXD Macvlan/Bridge Network Configuration - Troubleshooting Guide
+
+## Unified Configuration
+
+Since the update to use a unified configuration with `network_type` variable, you can now deploy both bridge and macvlan networks from a single Terraform setup:
+
+```bash
+# Bridge networking
+terraform apply -var="ssh_public_key=$(cat key.pub)" -var="network_type=bridge"
+
+# Macvlan networking
+terraform apply -var="ssh_public_key=$(cat key.pub)" -var="network_type=macvlan"
+```
 
 ## Issue Summary
 Terraform deployments of LXD virtual machines fail during startup with the error: `Failed to start device "eth0": Parent device 'k3s-prod-net' doesn't exist`, even though the LXD network exists and works correctly for manual container/VM creation.

@@ -6,3 +6,9 @@ variable "ssh_public_key" {
   sensitive   = true
 }
 
+variable "network_type" {
+  description = "Network type: bridge or macvlan"
+  type        = string
+  default     = "bridge"
+}
+
