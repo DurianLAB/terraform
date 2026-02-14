@@ -36,18 +36,33 @@
                           │  │ Container 2  │  │
                           │  │ Container N  │  │
                           │  └───────────────┘  │
-                          └─────────────────────┘
-                                    │
-                                    ▼
-                          ┌─────────────────────┐
-                          │     Ansible         │
-                          │   Provisioning      │
-                          └─────────┬──────────┘
-                                    │
-                                    ▼
-                          ┌─────────────────────┐
-                          │   Tests / Verify    │
-                          └─────────────────────┘
+                           └─────────────────────┘
+                                     │
+                                     ▼
+                           ┌─────────────────────┐
+                           │   Tests / Verify    │
+                           └──────────┬──────────┘
+                                      │
+                     ┌───────────────┴───────────────┐
+                     │                               │
+                     ▼                               ▼
+              ┌─────────────┐                 ┌─────────────┐
+              │   Success   │                 │   Failure   │
+              └──────┬──────┘                 └──────┬──────┘
+                     │                               │
+                     ▼                               ▼
+              ┌─────────────┐                 ┌─────────────┐
+              │  GitHub     │                 │  GitHub     │
+              │  Status: OK │                 │  Status:    │
+              └─────────────┘                 │  FAILED     │
+                                              └──────┬──────┘
+                                                     │
+                                                     ▼
+                                              ┌─────────────┐
+                                              │ Manual       │
+                                              │ terraform    │
+                                              │ destroy      │
+                                              └─────────────┘
 ```
 
 ## SysML Package Diagram
@@ -56,24 +71,24 @@
 graph TB
     subgraph "GitHub"
         A[Release v1.0] --> B[Jenkins Pipeline]
+        F[Status: FAILED] --> A
+        G[Status: OK] --> A
     end
     
     subgraph "IaC Layer"
         B --> C[Terraform]
-        C --> D[LXC Provider]
+        C --> D[LXD Provider]
     end
     
     subgraph "LXC Infrastructure"
         D -->|REST API 8443| E[LXD Daemon]
-        E --> F[LXC Containers]
-    end
-    
-    subgraph "Configuration"
-        G[Ansible Playbooks] --> F
+        E --> F1[LXC Containers]
     end
     
     subgraph "Validation"
-        F --> H[Integration Tests]
+        F1 --> H[Integration Tests]
+        H -->|pass| G
+        H -->|fail| F
     end
 ```
 
@@ -104,7 +119,8 @@ graph TB
 ║             ▼                                                                ║
 ║  ┌─────────────────────┐     ┌─────────────────────┐                       ║
 ║  │    <<block>>        │     │    <<block>>        │                       ║
-║  │    Terraform        │     │    LXCClient        │                       ║
+║  │    Terraform        │     │  Terraform LXD      │                       ║
+║  │    Configuration    │     │    Provider         │                       ║
 ║  ├─────────────────────┤     ├─────────────────────┤                       ║
 ║  │ + provider: LXC     │     │ + endpoint: String  │                       ║
 ║  │ + lxc_container     │────▶│ + config: Dict      │                       ║
@@ -154,14 +170,6 @@ graph TB
 | **Network Access** | Must reach LXD daemon port 8443 |
 | **Credentials** | LXD trust certificate |
 
-### Ansible
-
-| Requirement | Description |
-|-------------|-------------|
-| **Python** | 3.8+ on target containers |
-| **SSH Access** | To provisioned containers |
-| **Modules** | k8s, helm (for K8s workloads) |
-
 ### Jenkins
 
 | Requirement | Description |
@@ -175,15 +183,32 @@ graph TB
 
 ```
 ┌─────────┐     ┌──────────┐     ┌───────────┐     ┌────────┐     ┌─────────┐
-│ GitHub  │────▶│  Jenkins │────▶│ Terraform │────▶│  LXD   │────▶│ Ansible │
-│ Release │     │ Pipeline │     │   Plan    │     │  API   │     │ Deploy  │
-└─────────┘     └──────────┘     └───────────┘     └────────┘     └─────────┘
-     │               │                │                 │               │
-     │               │                │                 │               │
-     ▼               ▼                 ▼                 ▼               ▼
-   Trigger        Run job         Provision          Create         Configure
-   webhook        terraform       containers         containers     containers
+│ GitHub  │────▶│  Jenkins │────▶│ Terraform │────▶│  LXD   │────▶│  Test   │
+│ Release │     │ Pipeline │     │   Apply   │     │  API   │     │ Verify  │
+└─────────┘     └──────────┘     └───────────┘     └────────┘     └────┬────┘
+      ▲                                                                     │
+      │                                                                     │
+      │                    ┌──────────────────────────────────────────────┘
+      │                    │
+      │                    ▼                Failure Path
+      │              ┌─────────────┐      (manual cleanup)
+      │              │ GitHub      │◀──── terraform destroy
+      │              │ Status:     │
+      │              │ FAILED      │
+      │              └──────┬──────┘
+      │                     │
+      └─────────────────────┘
+           Notification
 ```
+
+## Error Handling
+
+On failure, the pipeline:
+1. Reports status back to GitHub (FAILED)
+2. Does NOT auto-rollback (containers remain for debugging)
+3. Manual cleanup required: `terraform destroy`
+
+This approach allows inspection of failed containers for debugging purposes.
 
 ## Example Jenkinsfile
 
@@ -227,16 +252,6 @@ pipeline {
                 dir('terraform') {
                     sh 'terraform apply -auto-approve tfplan'
                 }
-            }
-        }
-        
-        stage('Ansible Provision') {
-            steps {
-                ansiblePlaybook(
-                    playbook: 'site.yml',
-                    inventory: 'site.yml',
-                    credentialsId: 'ansible-ssh-key'
-                )
             }
         }
         

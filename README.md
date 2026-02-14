@@ -8,6 +8,18 @@
 
 This repository contains Terraform configurations for deploying K3s clusters in LXD virtual machines with flexible networking options (bridge or macvlan).
 
+## Architecture Diagrams
+
+The system architecture is documented in [docs/diagram.md](docs/diagram.md), which includes:
+- Deployment flow diagrams
+- SysML block definition diagrams
+- Mermaid flowchart
+- Connection sequence diagrams
+- Component requirements
+- Jenkins pipeline example
+
+To view the Mermaid diagram, use a Markdown viewer that supports Mermaid (VS Code with extension, GitHub, etc.).
+
 ## License
 
 This project is licensed under a Custom Non-Commercial License - see the [LICENSE](LICENSE) file for details. This license allows free sharing and modification for non-commercial use but prohibits commercial sale or commercial exploitation.
