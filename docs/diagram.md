@@ -214,6 +214,48 @@ Based on actual Terraform resources (`lxd_network`, `lxd_profile`, `lxd_instance
 - **LXD Network**: Function 6 (Network resource)
 - **LXD VM**: Functions 8, 9, 10 (Instance, Cloud-init, Tests)
 
+## SysML Requirements Traceability Matrix (RTM)
+
+```
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                    REQUIREMENTS TRACEABILITY MATRIX                                           ║
+╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                                                ║
+║  Requirement ID │ Requirement Description              │ Block/Component            │ Status    │ Test Method      ║
+║  ──────────────┼─────────────────────────────────────┼─────────────────────────────┼───────────┼──────────────────║
+║  REQ-001       │ Deploy K3s in LXD VMs                │ LXDVirtualMachine          │ Implemented│ terraform apply  ║
+║  REQ-002       │ Support bridge networking            │ lxd_network (bridge)       │ Implemented│ terraform apply  ║
+║  REQ-003       │ Support macvlan networking           │ lxd_network (macvlan)      │ Implemented│ terraform apply  ║
+║  REQ-004       │ Configurable CPU allocation          │ lxd_profile                │ Implemented│ terraform apply  ║
+║  REQ-005       │ Configurable memory allocation       │ lxd_profile                │ Implemented│ terraform apply  ║
+║  REQ-006       │ Cloud-init for VM bootstrap          │ lxd_instance (user-data)   │ Implemented│ terraform apply  ║
+║  REQ-007       │ K3s auto-installation               │ cloud_config               │ Implemented│ VM verification  ║
+║  REQ-008       │ SSH access to VMs                   │ cloud_config               │ Implemented│ SSH connectivity ║
+║  REQ-009       │ CI/CD pipeline automation           │ JenkinsPipeline           │ Implemented│ Jenkins job      ║
+║  REQ-010       │ GitHub webhook trigger              │ GitHubRelease             │ Implemented│ Webhook test     ║
+║  REQ-011       │ Terraform state management          │ Terraform                 │ Implemented│ terraform state  ║
+║  REQ-012       │ Manual rollback capability          │ Terraform                 │ Implemented│ terraform destroy║
+║                                                                                                                ║
+╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+║  Status: Implemented | Verified | Pending | Failed                                                         v1.0  ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### Requirements Allocation
+
+- **REQ-001** → `lxd_instance` (type = "virtual-machine")
+- **REQ-002** → `lxd_network` (type = "bridge")
+- **REQ-003** → `lxd_network` (type = "macvlan")
+- **REQ-004** → `lxd_profile` (config.limits.cpu)
+- **REQ-005** → `lxd_profile` (config.limits.memory)
+- **REQ-006** → `lxd_profile` (config.user.user-data)
+- **REQ-007** → cloud_config (K3s install script)
+- **REQ-008** → cloud_config (SSH authorized_keys)
+- **REQ-009** → Jenkinsfile
+- **REQ-010** → GitHub webhook
+- **REQ-011** → Terraform state
+- **REQ-012** → terraform destroy
+
 ## Example Jenkinsfile
 
 ```groovy
