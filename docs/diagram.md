@@ -66,37 +66,31 @@
                                                 └─────────────┘
 ```
 
-## SysML Package Diagram
+## Mermaid Flow Diagram
 
 ```mermaid
 graph TB
-    subgraph "CI/CD Package"
-        A[GitHub Release]:::pkg
-        B[Jenkins Pipeline]:::pkg
+    subgraph "GitHub"
+        A[Release v1.0] --> B[Jenkins Pipeline]
+        F[Status: FAILED] --> A
+        G[Status: OK] --> A
     end
     
-    subgraph "IaC Package"
-        C[Terraform]:::pkg
-        D[LXD Provider]:::pkg
+    subgraph "IaC Layer"
+        B --> C[Terraform]
+        C --> D[LXD Provider]
     end
     
-    subgraph "Infrastructure Package"
-        E[LXD Daemon]:::pkg
-        F[LXD VMs]:::pkg
+    subgraph "LXD Infrastructure"
+        D -->|REST API 8443| E[LXD Daemon]
+        E --> F1[LXD VMs]
     end
     
-    subgraph "Validation Package"
-        G[Integration Tests]:::pkg
+    subgraph "Validation"
+        F1 --> H[Integration Tests]
+        H -->|pass| G
+        H -->|fail| F
     end
-    
-    A -->|webhook| B
-    B -->|executes| C
-    C -->|uses| D
-    D -->|REST API 8443| E
-    E -->|creates| F
-    F -->|validated by| G
-    
-    classDef pkg fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
 ## Component Requirements
