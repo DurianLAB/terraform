@@ -1,6 +1,6 @@
 # LXD Virtual Machine Infrastructure with Terraform - System Architecture
 
-## SysML Block Definition Diagram
+## SysML Activity Diagram (ASCII)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -66,7 +66,7 @@
                                                 └─────────────┘
 ```
 
-## Mermaid Flow Diagram
+## SysML Activity Diagram (Mermaid)
 
 ```mermaid
 graph TB
@@ -123,7 +123,63 @@ graph TB
 | **Webhook** | GitHub webhook trigger on release |
 | **Agent** | Docker or SSH agent for running terraform |
 
-## Component Flow Diagram
+## SysML Block Definition Diagram
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║                            SYSML BLOCK DEFINITION                                ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+║  ┌─────────────────────┐                                                    ║
+║  │    <<block>>        │                                                    ║
+║  │   GitHubRelease     │                                                    ║
+║  ├─────────────────────┤                                                    ║
+║  │ + tag: String       │                                                    ║
+║  │ + webhook_trigger   │                                                    ║
+║  └──────────┬──────────┘                                                    ║
+║             │ triggers (webhook)                                             ║
+║             ▼                                                                ║
+║  ┌─────────────────────┐                                                    ║
+║  │    <<block>>        │                                                    ║
+║  │   JenkinsPipeline   │                                                    ║
+║  ├─────────────────────┤                                                    ║
+║  │ + runTerraform()    │                                                    ║
+║  │ + runTests()        │                                                    ║
+║  └──────────┬──────────┘                                                    ║
+║             │ executes                                                       ║
+║             ▼                                                                ║
+║  ┌─────────────────────┐     ┌─────────────────────┐                       ║
+║  │    <<block>>        │     │    <<block>>        │                       ║
+║  │    Terraform        │     │  Terraform LXD      │                       ║
+║  │    Configuration    │     │    Provider         │                       ║
+║  ├─────────────────────┤     ├─────────────────────┤                       ║
+║  │ + provider: LXD     │     │ + endpoint: String  │                       ║
+║  │ + lxd_instance      │────▶│ + config: Dict       │                       ║
+║  └──────────┬──────────┘     └──────────┬──────────┘                       ║
+║             │                             │                                   ║
+║             │    REST API                 │ connects                         ║
+║             │     (8443)                  ▼                                   ║
+║             │                     ┌─────────────────────┐                    ║
+║             │                     │    <<block>>        │                    ║
+║             └───────────────────▶│    LXCDaemon       │                    ║
+║                                   ├─────────────────────┤                    ║
+║                                   │ + port: 8443       │                    ║
+║                                   │ + certificates     │                    ║
+║                                   │ + vms: List        │                    ║
+║                                   └──────────┬──────────┘                    ║
+║                                              │ manages                         ║
+║                                              ▼                                ║
+║                                   ┌─────────────────────┐                    ║
+║                                   │  <<block>>          │                    ║
+║                                   │  LXDVirtualMachine  │                    ║
+║                                   ├─────────────────────┤                    ║
+║                                   │ + name: String     │                    ║
+║                                   │ + image: String    │                    ║
+║                                   │ + type: vm         │                    ║
+║                                   └─────────────────────┘                    ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+```
+
+## SysML Activity Diagram (Detailed)
 
 ```
 ┌─────────┐     ┌──────────┐     ┌───────────┐     ┌────────┐     ┌─────────┐
