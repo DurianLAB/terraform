@@ -167,6 +167,41 @@ graph TB
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
+## SysML N-Square Diagram (Function-Component Allocation Matrix)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                         N-SQUARE DIAGRAM: Function-Component Traceability                       ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                                  ║
+║  Functions (↓) / Components (→) │ GitHub │ Jenkins │ Terraform │ LXD Prov │ LXD Daemon │ VMs  ║
+║  ─────────────────────────────────────────┼────────┼─────────┼──────────┼──────────┼────────────┼─────║
+║  1. Trigger Release                  │   X    │         │          │          │            │      ║
+║  2. Run Pipeline                     │        │    X    │          │          │            │      ║
+║  3. Terraform Init                   │        │         │    X     │          │            │      ║
+║  4. Terraform Plan                   │        │         │    X     │          │            │      ║
+║  5. Terraform Apply                  │        │         │    X     │    X     │            │      ║
+║  6. Create Network                   │        │         │          │    X     │     X      │      ║
+║  7. Create VMs                        │        │         │          │          │     X      │  X   ║
+║  8. Install K3s                       │        │         │          │          │            │  X   ║
+║  9. Run Tests                         │        │         │          │          │            │  X   ║
+║  10. Report Status                    │        │    X    │          │          │            │      ║
+║  11. Manual Cleanup                   │        │         │    X     │          │            │      ║
+║                                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════════╣
+║  Legend: X = implements/owns                                                              v1.0  ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### Traceability Notes
+
+- **GitHub**: Functions 1, 10 (Trigger, Status)
+- **Jenkins Pipeline**: Functions 2, 10 (Run Pipeline, Report Status)
+- **Terraform**: Functions 3, 4, 5, 11 (Init, Plan, Apply, Destroy)
+- **LXD Provider**: Functions 5, 6 (Apply, Network)
+- **LXD Daemon**: Functions 6, 7 (Network, VMs)
+- **LXD VMs**: Functions 7, 8, 9 (Create, K3s, Tests)
+
 ## Example Jenkinsfile
 
 ```groovy
