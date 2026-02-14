@@ -1,97 +1,85 @@
 # LXD Virtual Machine Infrastructure with Terraform - System Architecture
 
-## SysML Activity Diagram (ASCII)
+## SysML Activity Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        INFRASTRUCTURE DOMAIN                                │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           DEPLOYMENT FLOW                                   │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌───────────┐
-│   GitHub     │────▶│   Jenkins    │────▶│  Terraform   │────▶│   LXD     │
-│   Release    │     │   Pipeline   │     │   Apply     │     │   Client  │
-└──────────────┘     └──────────────┘     └──────────────┘     └─────┬─────┘
-                                                                       │
-                                    ┌──────────────────────────────────┘
-                                    │
-                                    ▼
-                          ┌─────────────────────┐
-                          │    LXD Daemon       │
-                          │   (Server)          │
-                          │  ┌─────────────┐    │
-                          │  │  Port 8443  │    │
-                          │  └─────────────┘    │
-                           └─────────┬──────────┘
-                                     │
-                                     ▼
-                           ┌─────────────────────┐
-                           │  LXD Virtual        │
-                           │  Machines           │
-                           │  ┌───────────────┐  │
-                           │  │  VM 1 (K3s)   │  │
-                           │  │  VM 2 (K3s)   │  │
-                           │  │  VM N (K3s)   │  │
-                           │  └───────────────┘  │
-                           └─────────────────────┘
-                                     │
-                                     ▼
-                           ┌─────────────────────┐
-                           │   Tests / Verify    │
+                            ┌─────────────────────┐
+                            │    [Start]          │
+                            │   GitHub Release    │
                             └──────────┬──────────┘
                                        │
-                     ┌─────────────────┴─────────────────┐
-                     │                                   │
-                     ▼                                   ▼
-              ┌─────────────┐                   ┌─────────────┐
-              │   Success   │                   │   Failure   │
-              └──────┬──────┘                   └──────┬──────┘
-                     │                                   │
-                     ▼                                   ▼
-              ┌─────────────┐                   ┌─────────────┐
-              │  GitHub     │                   │  GitHub     │
-              │  Status: OK │                   │  Status:    │
-              └─────────────┘                   │  FAILED     │
-                                                └──────┬──────┘
-                                                       │
-                                                       ▼
-                                                ┌─────────────┐
-                                                │ Manual       │
-                                                │ terraform    │
-                                                │ destroy      │
-                                                └─────────────┘
+                                       ▼
+                            ┌─────────────────────┐
+                            │  (Jenkins Pipeline) │
+                            │    Run Terraform    │
+                            └──────────┬──────────┘
+                                       │
+                                       ▼
+                            ┌─────────────────────┐
+                            │  (Terraform Apply)  │
+                            │  Provision LXD VMs  │
+                            └──────────┬──────────┘
+                                       │
+                                       ▼
+                            ┌─────────────────────┐
+                            │  (LXD Daemon)       │
+                            │  Creates VMs        │
+                            └──────────┬──────────┘
+                                       │
+                                       ▼
+                            ┌─────────────────────┐
+                            │  (Run Tests)        │
+                            │  Verify Deployment   │
+                            └──────────┬──────────┘
+                                       │
+                              ┌────────┴────────┐
+                              │   [Decision]    │
+                              │   Tests Pass?   │
+                              └────────┬────────┘
+                            yes/        \no
+                               /         \
+                              ▼           ▼
+                    ┌───────────┐   ┌───────────┐
+                    │ [Action]  │   │ [Action]  │
+                    │  Update   │   │  Update   │
+                    │  Status:  │   │  Status:  │
+                    │    OK     │   │  FAILED   │
+                    └─────┬─────┘   └─────┬─────┘
+                          │               │
+                          │               ▼
+                          │     ┌─────────────────┐
+                          │     │  (Manual)       │
+                          │     │  terraform      │
+                          │     │  destroy        │
+                          │     └────────┬────────┘
+                          │              │
+                          └──────┬───────┘
+                                 │
+                                 ▼
+                         ┌───────────────┐
+                         │    [End]      │
+                         └───────────────┘
 ```
 
 ## SysML Activity Diagram (Mermaid)
 
 ```mermaid
 graph TB
-    subgraph "GitHub"
-        A[Release v1.0] --> B[Jenkins Pipeline]
-        F[Status: FAILED] --> A
-        G[Status: OK] --> A
-    end
+    Start([Start]) --> A[GitHub Release]
+    A --> B[Run Jenkins Pipeline]
+    B --> C[Terraform Apply]
+    C --> D[Create LXD VMs]
+    D --> E[Run Integration Tests]
+    E --> D1{Tests Pass?}
     
-    subgraph "IaC Layer"
-        B --> C[Terraform]
-        C --> D[LXD Provider]
-    end
+    D1 -->|yes| F[Update Status: OK]
+    D1 -->|no| G[Update Status: FAILED]
+    G --> H[Manual terraform destroy]
     
-    subgraph "LXD Infrastructure"
-        D -->|REST API 8443| E[LXD Daemon]
-        E --> F1[LXD VMs]
-    end
-    
-    subgraph "Validation"
-        F1 --> H[Integration Tests]
-        H -->|pass| G
-        H -->|fail| F
-    end
+    F --> End([End])
+    H --> End
 ```
+
 
 ## Component Requirements
 
@@ -182,33 +170,35 @@ graph TB
 ## SysML Activity Diagram (Detailed)
 
 ```
-┌─────────┐     ┌──────────┐     ┌───────────┐     ┌────────┐     ┌─────────┐
-│ GitHub  │────▶│  Jenkins │────▶│ Terraform │────▶│  LXD   │────▶│  Test   │
-│ Release │     │ Pipeline │     │   Apply   │     │  API   │     │ Verify  │
-└─────────┘     └──────────┘     └───────────┘     └────────┘     └────┬────┘
-      ▲                                                             │
-      │                                                             │
-      │                    ┌────────────────────────────────────────┘
-      │                    │
-      │                    ▼                Failure Path
-      │              ┌─────────────┐      (manual cleanup)
-      │              │ GitHub      │◀────── terraform destroy
-      │              │ Status:     │
-      │              │ FAILED      │
-      │              └──────┬──────┘
-      │                     │
-      └─────────────────────┘
-           Notification
+┌─────────────┐   ┌────────────┐   ┌────────────┐   ┌──────────┐   ┌───────────┐
+│   [Start]   │   │  [Action]  │   │  [Action]  │   │  [Action]│   │  [Action] │
+│ GitHub      │──▶│  Jenkins   │──▶│ Terraform   │──▶│   LXD    │──▶│  Run      │
+│ Release     │   │  Pipeline  │   │  Apply     │   │  API     │   │  Tests    │
+└─────────────┘   └──────┬─────┘   └──────┬─────┘   └────┬─────┘   └─────┬─────┘
+                         │                │              │                │
+                         │                │              │                │
+                         │                │              │          ┌──────┴──────┐
+                         │                │              │          │  [Decision] │
+                         │                │              │          │ Tests Pass? │
+                         │                │              │          └──────┬──────┘
+                         │                │              │                │
+                         │                │              │         yes/    \no
+                         │                │              │           /      \
+                         │                │              │          ▼        ▼
+                         │                │              │   ┌─────────┐ ┌─────────┐
+                         │                │              │   │[Action] │ │[Action] │
+                         │                │              │   │ Update  │ │ Manual  │
+                         │                │              │   │ Status: │ │ destroy │
+                         │                │              │   │ OK      │ │         │
+                         │                │              │   └────┬────┘ └────┬────┘
+                         │                │              │        │          │
+                         │                │              │        └────┬─────┘
+                         │                │              │             │
+                         │                │              │             ▼
+                         │                │              │      ┌───────────┐
+                         │                │              │      │   [End]   │
+                          │                │              │      └───────────┘
 ```
- 
-## Error Handling
-
-On failure, the pipeline:
-1. Reports status back to GitHub (FAILED)
-2. Does NOT auto-rollback (VMs remain for debugging)
-3. Manual cleanup required: `terraform destroy`
-
-This approach allows inspection of failed VMs for debugging purposes.
 
 ## Example Jenkinsfile
 
