@@ -1,4 +1,4 @@
-# LXC Infrastructure with Terraform - System Architecture
+# LXD Virtual Machine Infrastructure with Terraform - System Architecture
 
 ## SysML Block Definition Diagram
 
@@ -13,7 +13,7 @@
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌───────────┐
-│   GitHub     │────▶│   Jenkins    │────▶│  Terraform   │────▶│   LXC     │
+│   GitHub     │────▶│   Jenkins    │────▶│  Terraform   │────▶│   LXD     │
 │   Release    │     │   Pipeline   │     │   Apply     │     │   Client  │
 └──────────────┘     └──────────────┘     └──────────────┘     └─────┬─────┘
                                                                        │
@@ -26,43 +26,44 @@
                           │  ┌─────────────┐    │
                           │  │  Port 8443  │    │
                           │  └─────────────┘    │
-                          └─────────┬──────────┘
-                                    │
-                                    ▼
-                          ┌─────────────────────┐
-                          │   LXC Containers   │
-                          │  ┌───────────────┐  │
-                          │  │ Container 1  │  │
-                          │  │ Container 2  │  │
-                          │  │ Container N  │  │
-                          │  └───────────────┘  │
+                           └─────────┬──────────┘
+                                     │
+                                     ▼
+                           ┌─────────────────────┐
+                           │  LXD Virtual        │
+                           │  Machines           │
+                           │  ┌───────────────┐  │
+                           │  │  VM 1 (K3s)   │  │
+                           │  │  VM 2 (K3s)   │  │
+                           │  │  VM N (K3s)   │  │
+                           │  └───────────────┘  │
                            └─────────────────────┘
                                      │
                                      ▼
                            ┌─────────────────────┐
                            │   Tests / Verify    │
-                           └──────────┬──────────┘
-                                      │
-                     ┌───────────────┴───────────────┐
-                     │                               │
-                     ▼                               ▼
-              ┌─────────────┐                 ┌─────────────┐
-              │   Success   │                 │   Failure   │
-              └──────┬──────┘                 └──────┬──────┘
-                     │                               │
-                     ▼                               ▼
-              ┌─────────────┐                 ┌─────────────┐
-              │  GitHub     │                 │  GitHub     │
-              │  Status: OK │                 │  Status:    │
-              └─────────────┘                 │  FAILED     │
-                                              └──────┬──────┘
-                                                     │
-                                                     ▼
-                                              ┌─────────────┐
-                                              │ Manual       │
-                                              │ terraform    │
-                                              │ destroy      │
-                                              └─────────────┘
+                            └──────────┬──────────┘
+                                       │
+                     ┌─────────────────┴─────────────────┐
+                     │                                   │
+                     ▼                                   ▼
+              ┌─────────────┐                   ┌─────────────┐
+              │   Success   │                   │   Failure   │
+              └──────┬──────┘                   └──────┬──────┘
+                     │                                   │
+                     ▼                                   ▼
+              ┌─────────────┐                   ┌─────────────┐
+              │  GitHub     │                   │  GitHub     │
+              │  Status: OK │                   │  Status:    │
+              └─────────────┘                   │  FAILED     │
+                                                └──────┬──────┘
+                                                       │
+                                                       ▼
+                                                ┌─────────────┐
+                                                │ Manual       │
+                                                │ terraform    │
+                                                │ destroy      │
+                                                └─────────────┘
 ```
 
 ## SysML Package Diagram
@@ -80,9 +81,9 @@ graph TB
         C --> D[LXD Provider]
     end
     
-    subgraph "LXC Infrastructure"
+    subgraph "LXD Infrastructure"
         D -->|REST API 8443| E[LXD Daemon]
-        E --> F1[LXC Containers]
+        E --> F1[LXD VMs]
     end
     
     subgraph "Validation"
@@ -90,63 +91,6 @@ graph TB
         H -->|pass| G
         H -->|fail| F
     end
-```
-
-## SysML Block Definition (Detailed)
-
-```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                            SYSML BLOCK DEFINITION                            ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║  ┌─────────────────────┐                                                    ║
-║  │    <<block>>        │                                                    ║
-║  │    GitHubRelease    │                                                    ║
-║  ├─────────────────────┤                                                    ║
-║  │ + tag: String       │                                                    ║
-║  │ + webhook_trigger  │                                                    ║
-║  └──────────┬──────────┘                                                    ║
-║             │ triggers (webhook)                                            ║
-║             ▼                                                                ║
-║  ┌─────────────────────┐                                                    ║
-║  │    <<block>>        │                                                    ║
-║  │   JenkinsPipeline   │                                                    ║
-║  ├─────────────────────┤                                                    ║
-║  │ + runTerraform()    │                                                    ║
-║  │ + runAnsible()      │                                                    ║
-║  │ + runTests()        │                                                    ║
-║  └──────────┬──────────┘                                                    ║
-║             │ executes                                                       ║
-║             ▼                                                                ║
-║  ┌─────────────────────┐     ┌─────────────────────┐                       ║
-║  │    <<block>>        │     │    <<block>>        │                       ║
-║  │    Terraform        │     │  Terraform LXD      │                       ║
-║  │    Configuration    │     │    Provider         │                       ║
-║  ├─────────────────────┤     ├─────────────────────┤                       ║
-║  │ + provider: LXC     │     │ + endpoint: String  │                       ║
-║  │ + lxc_container     │────▶│ + config: Dict      │                       ║
-║  └──────────┬──────────┘     └──────────┬──────────┘                       ║
-║             │                             │                                   ║
-║             │    REST API                 │ connects                         ║
-║             │     (8443)                  ▼                                   ║
-║             │                     ┌─────────────────────┐                    ║
-║             │                     │    <<block>>        │                    ║
-║             └───────────────────▶│    LXDDaemon       │                    ║
-║                                   ├─────────────────────┤                    ║
-║                                   │ + port: 8443       │                    ║
-║                                   │ + certificates     │                    ║
-║                                   │ + containers: List  │                    ║
-║                                   └──────────┬──────────┘                    ║
-║                                              │ manages                         ║
-║                                              ▼                                ║
-║                                   ┌─────────────────────┐                    ║
-║                                   │  <<block>>          │                    ║
-║                                   │  LXCContainer       │                    ║
-║                                   ├─────────────────────┤                    ║
-║                                   │ + name: String      │                    ║
-║                                   │ + image: String     │                    ║
-║                                   │ + ephemeral: Bool  │                    ║
-║                                   └─────────────────────┘                    ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
 ```
 
 ## Component Requirements
@@ -161,12 +105,12 @@ graph TB
 | **Network** | Accessible by Terraform host |
 | **Authentication** | Certificate-based (trust password) |
 
-### LXC Client / Terraform
+### Terraform / LXD Provider
 
 | Requirement | Description |
 |-------------|-------------|
 | **Terraform** | 1.0+ |
-| **Provider** | `terraform-provider-lxc` or `terraform-provider-lxd` |
+| **Provider** | `terraform-lxd/lxd` |
 | **Network Access** | Must reach LXD daemon port 8443 |
 | **Credentials** | LXD trust certificate |
 
@@ -176,7 +120,7 @@ graph TB
 |-------------|-------------|
 | **Plugins** | Pipeline, SSH Agent, Terraform, Git |
 | **Credentials** | SSH private key, LXD certificates |
-| **Webhook** | GitHub/GitLab webhook trigger on release |
+| **Webhook** | GitHub webhook trigger on release |
 | **Agent** | Docker or SSH agent for running terraform |
 
 ## Connection Flow Sequence
@@ -186,13 +130,13 @@ graph TB
 │ GitHub  │────▶│  Jenkins │────▶│ Terraform │────▶│  LXD   │────▶│  Test   │
 │ Release │     │ Pipeline │     │   Apply   │     │  API   │     │ Verify  │
 └─────────┘     └──────────┘     └───────────┘     └────────┘     └────┬────┘
-      ▲                                                                     │
-      │                                                                     │
-      │                    ┌──────────────────────────────────────────────┘
+      ▲                                                             │
+      │                                                             │
+      │                    ┌────────────────────────────────────────┘
       │                    │
       │                    ▼                Failure Path
       │              ┌─────────────┐      (manual cleanup)
-      │              │ GitHub      │◀──── terraform destroy
+      │              │ GitHub      │◀────── terraform destroy
       │              │ Status:     │
       │              │ FAILED      │
       │              └──────┬──────┘
@@ -200,15 +144,15 @@ graph TB
       └─────────────────────┘
            Notification
 ```
-
+ 
 ## Error Handling
 
 On failure, the pipeline:
 1. Reports status back to GitHub (FAILED)
-2. Does NOT auto-rollback (containers remain for debugging)
+2. Does NOT auto-rollback (VMs remain for debugging)
 3. Manual cleanup required: `terraform destroy`
 
-This approach allows inspection of failed containers for debugging purposes.
+This approach allows inspection of failed VMs for debugging purposes.
 
 ## Example Jenkinsfile
 
@@ -257,7 +201,7 @@ pipeline {
         
         stage('Run Tests') {
             steps {
-                sh './test-container.sh'
+                sh './test-vm.sh'
             }
         }
     }
@@ -267,30 +211,26 @@ pipeline {
 ## Example Terraform Configuration
 
 ```hcl
-# LXC Provider Configuration
-provider "lxc" {
-  lxc_url = "https://192.168.1.100:8443"
-  lxc_cert = "./lxd-cert.crt"
-  lxc_key  = "./lxd-key.key"
+# LXD Provider Configuration
+provider "lxd" {
+  address = "https://192.168.1.100:8443"
+  cert_file = "./lxd-cert.crt"
+  key_file  = "./lxd-key.key"
 }
 
-# Container Definition
-resource "lxc_container" "jenkins" {
-  name        = "jenkins-server"
-  image       = "ubuntu/22.04"
-  ephemeral   = false
-  start       = true
+# Virtual Machine Definition
+resource "lxd_instance" "k3s_vm" {
+  name      = "k3s-server"
+  image     = "ubuntu/22.04"
+  type      = "virtual-machine"
+  ephemeral = false
+  profiles  = ["default"]
+
+  wait_for_network = true
 
   config = {
-    "security.nesting" = "true"
-    "linux.kernel_modules" = "overlay,nf_conntrack"
-  }
-
-  devices = {
-    root = {
-      path = "/"
-      type = "disk"
-    }
+    "limits.cpu"    = "2"
+    "limits.memory" = "4GB"
   }
 }
 ```
