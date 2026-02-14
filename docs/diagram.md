@@ -123,7 +123,7 @@ graph TB
 | **Webhook** | GitHub webhook trigger on release |
 | **Agent** | Docker or SSH agent for running terraform |
 
-## Connection Flow Sequence
+## Component Flow Diagram
 
 ```
 ┌─────────┐     ┌──────────┐     ┌───────────┐     ┌────────┐     ┌─────────┐
