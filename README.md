@@ -34,7 +34,7 @@ Developed by [DurianLAB](https://durianlab.tech/).
 ├── scenarios/                   # Legacy scenario configurations (deprecated)
 │   ├── bridge-networking/
 │   └── macvlan-networking/
-├── terraform-idempotent.sh      # Idempotent wrapper script
+├── start-here.sh               # Idempotent wrapper script
 ├── test-macvlan-*.sh            # Connectivity testing scripts
 ├── TROUBLESHOOTING.md           # Network configuration troubleshooting
 └── README.md                    # This file
@@ -90,13 +90,13 @@ The configuration supports two network types via the `network_type` variable:
 3. Use the idempotent wrapper script (recommended):
    ```bash
    # Deploy with bridge networking
-   ./terraform-idempotent.sh apply -var "ssh_public_key=$(cat id_ed25519.pub)" -var "network_type=bridge"
+   ./start-here.sh apply -var "ssh_public_key=$(cat id_ed25519.pub)" -var "network_type=bridge"
    
    # Deploy with macvlan networking
-   ./terraform-idempotent.sh apply -var "ssh_public_key=$(cat id_ed25519.pub)" -var "network_type=macvlan"
+   ./start-here.sh apply -var "ssh_public_key=$(cat id_ed25519.pub)" -var "network_type=macvlan"
    
    # Destroy
-   ./terraform-idempotent.sh destroy -var "ssh_public_key=$(cat id_ed25519.pub)"
+   ./start-here.sh destroy -var "ssh_public_key=$(cat id_ed25519.pub)"
    ```
 
    Or use terraform directly (may require manual import for existing resources):
