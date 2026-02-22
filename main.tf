@@ -40,7 +40,7 @@ module "k3s_cluster_node" {
           shell: /bin/bash
           sudo: ALL=(ALL) NOPASSWD:ALL
           ssh_authorized_keys:
-            - ${var.ssh_public_key}
+            - ${join("\n            - ", [for f in var.ssh_public_keys : file(f)])}
 
       runcmd:
         - apt-get update -y

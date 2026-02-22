@@ -22,9 +22,9 @@ usage() {
     echo "  plan       - Show plan (includes preflight)"
     echo ""
     echo "Examples:"
-    echo "  $0 preflight -var 'ssh_public_key=\$(cat key.pub)' -var 'network_type=bridge'"
-    echo "  $0 apply -var 'ssh_public_key=\$(cat key.pub)' -var 'network_type=bridge'"
-    echo "  $0 destroy -var 'ssh_public_key=\$(cat key.pub)'"
+    echo "  $0 preflight -var 'ssh_public_keys=[\\"\$(cat key.pub)\\""]' -var 'network_type=bridge'"
+    echo "  $0 apply -var 'ssh_public_keys=[\\"\$(cat key.pub)\\""]' -var 'network_type=bridge'"
+    echo "  $0 destroy -var 'ssh_public_keys=[\\"\$(cat key.pub)\\""]'"
     exit 1
 }
 
@@ -87,13 +87,13 @@ run_preflight() {
     
     WORKSPACE=$(terraform workspace show 2>/dev/null || echo "default")
     NETWORK_TYPE=$(get_var "network_type" || echo "bridge")
-    SSH_KEY=$(get_var "ssh_public_key")
+    SSH_KEY=$(get_var "ssh_public_keys")
     
     log_info "Workspace: $WORKSPACE"
     log_info "Network Type: $NETWORK_TYPE"
     
     if [[ -z "$SSH_KEY" ]]; then
-        log_warn "ssh_public_key not provided - some checks may fail"
+        log_warn "ssh_public_keys not provided - some checks may fail"
     else
         log_info "SSH key: provided"
     fi

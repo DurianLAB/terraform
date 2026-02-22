@@ -89,14 +89,22 @@ The configuration supports two network types via the `network_type` variable:
 
 3. Use the idempotent wrapper script (recommended):
    ```bash
-   # Deploy with bridge networking
-   ./start-here.sh apply -var "ssh_public_key=$(cat id_ed25519.pub)" -var "network_type=bridge"
+   # Deploy with bridge networking (single key)
+   ./start-here.sh apply -var "ssh_public_keys=[\"$(cat id_ed25519.pub)\"]" -var "network_type=bridge"
+   
+   # Deploy with multiple keys
+   ./start-here.sh apply -var "ssh_public_keys=[\"$(cat key1.pub)\",\"$(cat key2.pub)\"]" -var "network_type=bridge"
    
    # Deploy with macvlan networking
-   ./start-here.sh apply -var "ssh_public_key=$(cat id_ed25519.pub)" -var "network_type=macvlan"
+   ./start-here.sh apply -var "ssh_public_keys=[\"$(cat id_ed25519.pub)\"]" -var "network_type=macvlan"
    
    # Destroy
-   ./start-here.sh destroy -var "ssh_public_key=$(cat id_ed25519.pub)"
+   ./start-here.sh destroy -var "ssh_public_keys=[\"$(cat id_ed25519.pub)\"]"
+   ```
+
+   Or use terraform directly (may require manual import for existing resources):
+   ```bash
+   terraform apply -var="ssh_public_keys=[\"$(cat id_ed25519.pub)\"]" -var="network_type=bridge"
    ```
 
    Or use terraform directly (may require manual import for existing resources):
@@ -141,7 +149,7 @@ lxc network show k3s-{env}-net
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| ssh_public_key | SSH public key for ansible user | Yes | - |
+| ssh_public_keys | List of SSH public key files for ansible user | Yes | - |
 | network_type | Network type: bridge or macvlan | No | bridge |
 
 ## Outputs

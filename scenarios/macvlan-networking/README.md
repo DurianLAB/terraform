@@ -21,8 +21,18 @@ Use the unified configuration in the root directory:
 cd ..
 terraform init
 terraform workspace select prod
-terraform plan -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=macvlan"
-terraform apply -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=macvlan"
+terraform plan -var="ssh_public_keys=[\"$(cat ../id_ed25519.pub)\"]" -var "network_type=macvlan"
+terraform apply -var="ssh_public_keys=[\"$(cat ../id_ed25519.pub)\"]" -var "network_type=macvlan"
+```
+
+## Legacy Usage
+
+```bash
+cd scenarios/macvlan-networking
+terraform init
+terraform workspace select prod
+terraform plan -var="ssh_public_keys=[\"$(cat ../../id_ed25519.pub)\"]"
+terraform apply -var="ssh_public_keys=[\"$(cat ../../id_ed25519.pub)\"]"
 ```
 
 ## Legacy Usage

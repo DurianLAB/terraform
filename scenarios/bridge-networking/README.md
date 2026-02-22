@@ -21,8 +21,8 @@ Use the unified configuration in the root directory:
 cd ..
 terraform init
 terraform workspace select dev
-terraform plan -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=bridge"
-terraform apply -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_type=bridge"
+terraform plan -var="ssh_public_keys=[\"$(cat ../id_ed25519.pub)\"]" -var "network_type=bridge"
+terraform apply -var="ssh_public_keys=[\"$(cat ../id_ed25519.pub)\"]" -var "network_type=bridge"
 ```
 
 ## Legacy Usage
@@ -31,8 +31,8 @@ terraform apply -var="ssh_public_key=$(cat ../id_ed25519.pub)" -var="network_typ
 cd scenarios/bridge-networking
 terraform init
 terraform workspace select dev
-terraform plan -var="ssh_public_key=$(cat ../../id_ed25519.pub)"
-terraform apply -var="ssh_public_key=$(cat ../../id_ed25519.pub)"
+terraform plan -var="ssh_public_keys=[\"$(cat ../../id_ed25519.pub)\"]"
+terraform apply -var="ssh_public_keys=[\"$(cat ../../id_ed25519.pub)\"]"
 ```
 
 ## Network Access
