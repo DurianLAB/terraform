@@ -13,7 +13,7 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 usage() {
-    echo "Usage: $0 [apply|destroy|plan|preflight] [-var 'key=value' ...]"
+    echo "Usage: $0 [apply|destroy|plan|preflight] [-var 'key=value' ...] [-var-file=file.tfvars]"
     echo ""
     echo "Commands:"
     echo "  preflight  - Run preflight checks before deployment"
@@ -21,10 +21,14 @@ usage() {
     echo "  destroy    - Destroy infrastructure"
     echo "  plan       - Show plan (includes preflight)"
     echo ""
+    echo "Options:"
+    echo "  -var 'key=value'     Set a variable (can be used multiple times)"
+    echo "  -var-file=file.tfvars  Load variables from a file"
+    echo ""
     echo "Examples:"
-    echo "  $0 preflight -var 'ssh_public_keys=[\\"\$(cat key.pub)\\""]' -var 'network_type=bridge'"
-    echo "  $0 apply -var 'ssh_public_keys=[\\"\$(cat key.pub)\\""]' -var 'network_type=bridge'"
-    echo "  $0 destroy -var 'ssh_public_keys=[\\"\$(cat key.pub)\\""]'"
+    echo '  $0 apply -var-file=dev.tfvars'
+    echo '  $0 apply -var-file=prod.tfvars'
+    echo '  $0 preflight -var "network_type=bridge"'
     exit 1
 }
 
@@ -36,11 +40,16 @@ if [[ ! "$ACTION" =~ ^(apply|destroy|plan|preflight)$ ]]; then
 fi
 
 VARS=()
+VAR_FILES=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -var)
             VARS+=("$1" "$2")
             shift 2
+            ;;
+        -var-file=*)
+            VAR_FILES+=("$1")
+            shift
             ;;
         *)
             VARS+=("$1")
@@ -60,6 +69,17 @@ get_var() {
                 return
             fi
             ((i++))
+        fi
+    done
+    
+    for vf in "${VAR_FILES[@]}"; do
+        local file="${vf#-var-file=}"
+        if [[ -f "$file" ]]; then
+            local value=$(grep -E "^${var_name}\s*=" "$file" | sed 's/^[^=]*=\s*//' | tr -d '"' | tr -d ' ')
+            if [[ -n "$value" ]]; then
+                echo "$value"
+                return
+            fi
         fi
     done
 }
@@ -206,7 +226,7 @@ import_existing_resources() {
         
         if ! terraform state show "module.k3s_cluster_node.$RESOURCE" >/dev/null 2>&1; then
             log_info "Importing network into state..."
-            if terraform import "module.k3s_cluster_node.$RESOURCE" "$NETWORK_NAME" "${VARS[@]}" 2>/dev/null; then
+            if terraform import "module.k3s_cluster_node.$RESOURCE" "$NETWORK_NAME" "${VAR_FILES[@]}" "${VARS[@]}" 2>/dev/null; then
                 ((imported++))
             fi
         fi
@@ -216,7 +236,7 @@ import_existing_resources() {
         log_info "Found existing profile: $PROFILE_NAME"
         if ! terraform state show "module.k3s_cluster_node.lxd_profile.instance_profile" >/dev/null 2>&1; then
             log_info "Importing profile into state..."
-            if terraform import "module.k3s_cluster_node.lxd_profile.instance_profile" "$PROFILE_NAME" "${VARS[@]}" 2>/dev/null; then
+            if terraform import "module.k3s_cluster_node.lxd_profile.instance_profile" "$PROFILE_NAME" "${VAR_FILES[@]}" "${VARS[@]}" 2>/dev/null; then
                 ((imported++))
             fi
         fi
@@ -226,7 +246,7 @@ import_existing_resources() {
         log_info "Found existing instance: $INSTANCE_NAME"
         if ! terraform state show "module.k3s_cluster_node.lxd_instance.app_instance" >/dev/null 2>&1; then
             log_info "Importing instance into state..."
-            if terraform import "module.k3s_cluster_node.lxd_instance.app_instance" "$INSTANCE_NAME" "${VARS[@]}" 2>/dev/null; then
+            if terraform import "module.k3s_cluster_node.lxd_instance.app_instance" "$INSTANCE_NAME" "${VAR_FILES[@]}" "${VARS[@]}" 2>/dev/null; then
                 ((imported++))
             fi
         fi
@@ -251,15 +271,15 @@ if [[ "$ACTION" == "apply" ]]; then
     echo "==> Checking for existing resources..."
     import_existing_resources
     echo "==> Running terraform apply..."
-    terraform apply -auto-approve "${VARS[@]}"
+    terraform apply -auto-approve "${VAR_FILES[@]}" "${VARS[@]}"
     
 elif [[ "$ACTION" == "destroy" ]]; then
     echo "==> Running terraform destroy..."
-    terraform destroy -auto-approve "${VARS[@]}"
+    terraform destroy -auto-approve "${VAR_FILES[@]}" "${VARS[@]}"
     
 else
     echo "==> Running terraform $ACTION..."
-    terraform "$ACTION" "${VARS[@]}"
+    terraform "$ACTION" "${VAR_FILES[@]}" "${VARS[@]}"
 fi
 
 echo "==> Done!"
