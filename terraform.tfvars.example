@@ -1,0 +1,13 @@
+# Example Terraform variables file
+# Copy this to dev.tfvars, prod.tfvars, etc. and customize
+
+# SSH public keys (can be file paths or direct content)
+# Single key:
+# ssh_public_keys = ["id_rsa.pub"]
+# Multiple keys:
+# ssh_public_keys = ["id_rsa.pub", "deploy_key.pub", "other.pub"]
+
+ssh_public_keys = ["id_rsa.pub"]
+
+# Network type: bridge or macvlan
+network_type = "bridge"

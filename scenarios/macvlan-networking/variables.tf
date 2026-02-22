@@ -1,8 +1,8 @@
 
 
-variable "ssh_public_key" {
-  description = "SSH public key for ansible user"
-  type        = string
-  sensitive   = true
+variable "ssh_public_keys" {
+  description = "List of SSH public key files for ansible user"
+  type        = list(string)
+  default     = []
 }
 

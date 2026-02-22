@@ -6,10 +6,10 @@ Since the update to use a unified configuration with `network_type` variable, yo
 
 ```bash
 # Bridge networking
-terraform apply -var="ssh_public_key=$(cat key.pub)" -var="network_type=bridge"
+terraform apply -var="ssh_public_keys=[\"$(cat key.pub)\"]" -var "network_type=bridge"
 
 # Macvlan networking
-terraform apply -var="ssh_public_key=$(cat key.pub)" -var="network_type=macvlan"
+terraform apply -var="ssh_public_keys=[\"$(cat key.pub)\"]" -var "network_type=macvlan"
 ```
 
 ## Common Errors
@@ -38,7 +38,7 @@ terraform import 'module.k3s_cluster_node.lxd_network.network[0]' k3s-prod-net
 
 Then run terraform apply again:
 ```bash
-terraform apply -var="ssh_public_key=$(cat key.pub)" -var="network_type=bridge
+terraform apply -var="ssh_public_keys=[\"$(cat key.pub)\"]" -var "network_type=bridge"
 ```
 
 ### Profile Already Exists
@@ -172,7 +172,7 @@ lxc network delete <network-name>
 
 ### 4. Reapply Terraform Configuration
 ```bash
-terraform apply -var="ssh_public_key=$(cat <key-file>)" -auto-approve
+terraform apply -var="ssh_public_keys=[\"$(cat <key-file>)\"]" -auto-approve
 ```
 
 ## Verification Steps
@@ -236,7 +236,7 @@ lxc profile delete <name>
 
 # Terraform operations
 terraform plan
-terraform apply -var="ssh_public_key=$(cat key.pub)"
+terraform apply -var="ssh_public_keys=[\"$(cat key.pub)\"]"
 terraform state list
 terraform state show <resource>
 ```
