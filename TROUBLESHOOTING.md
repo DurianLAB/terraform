@@ -1,5 +1,26 @@
 # LXD Macvlan/Bridge Network Configuration - Troubleshooting Guide
 
+## Prerequisites
+
+### Workspace Selection
+**IMPORTANT:** Always select or create a Terraform workspace before running the deployment:
+
+```bash
+# List existing workspaces
+terraform workspace list
+
+# Create a new workspace (e.g., dev, staging, prod)
+terraform workspace new dev
+
+# Select an existing workspace
+terraform workspace select dev
+```
+
+Then run the deployment:
+```bash
+./start-here.sh apply -var-file=dev.tfvars
+```
+
 ## Unified Configuration
 
 Since the update to use a unified configuration with `network_type` variable, you can now deploy both bridge and macvlan networks from a single Terraform setup:
@@ -246,7 +267,25 @@ terraform state show <resource>
 - The problem manifests only when using managed LXD networks (bridge/macvlan) created via Terraform
 - Physical network interfaces work fine with `nictype: macvlan` and `parent: <physical-interface>` configuration
 
-**Document Version:** 1.0
-**Last Updated:** January 17, 2026
+**Document Version:** 1.1
+**Last Updated:** February 24, 2026
 **Author:** System Engineer
 **Related Components:** Terraform, LXD, Macvlan networking
+
+## Known Issues
+
+### K3s Nodes Not Joining Cluster
+
+**Issue:** Each k3s node is deployed as a standalone single-node cluster rather than forming a multi-node cluster.
+
+**Current Behavior:**
+- Each node runs its own k3s installation
+- `kubectl get nodes` shows only 1 node per cluster
+- No cluster communication between nodes
+
+**Workaround:**
+Use Ansible to join nodes into a cluster after deployment, or manually:
+1. Get the node token from the first node: `lxc exec k3s-dev-node-1 -- cat /var/lib/rancher/k3s/server/node-token`
+2. Join other nodes: `curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='server --token=<token> --server=https://<node1-ip>:6443' sh -`
+
+**Related GitHub Issue:** https://github.com/DurianLAB/terraform/issues/1
