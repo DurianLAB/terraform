@@ -69,3 +69,9 @@ variable "parent_interface" {
   type        = string
   default     = "eth0"
 }
+
+variable "create_network" {
+  description = "Whether to create the network (set to false for subsequent nodes)"
+  type        = bool
+  default     = true
+}

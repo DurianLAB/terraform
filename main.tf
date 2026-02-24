@@ -14,7 +14,7 @@ locals {
     }
   }
   current_env = lookup(local.env_configs, terraform.workspace, local.env_configs["dev"])
-  node_ips    = [for i in range(var.node_count) : var.network_type == "bridge" ? cidrhost(local.current_env.bridge_ipv4_address, 10 + i) : ""]
+  node_ips    = [for i in range(var.node_count) : var.network_type == "bridge" ? "${cidrhost(local.current_env.bridge_ipv4_address, 10 + i)}${split("/", local.current_env.bridge_ipv4_address)[1]}" : ""]
 }
 
 module "k3s_cluster" {
@@ -30,6 +30,7 @@ module "k3s_cluster" {
   storage_pool     = "my-dir-pool"
   cpu_count        = 2
   memory_gb        = 2
+  create_network   = count.index == 0
   cloud_config     = <<-EOF
       #cloud-config
       hostname: k3s-${terraform.workspace}-node-${count.index + 1}

@@ -6,26 +6,11 @@ terraform {
   }
 }
 
-resource "lxd_network" "network" {
-  name = var.network_name
-  type = var.network_type
-
-  count = var.network_type == "macvlan" ? 1 : 0
-
-  config = var.network_type == "macvlan" ? {
-    parent = var.parent_interface
-  } : {}
-
-  lifecycle {
-    ignore_changes = [config]
-  }
-}
-
 resource "lxd_network" "bridge_network" {
   name = var.network_name
   type = "bridge"
 
-  count = var.network_type == "bridge" ? 1 : 0
+  count = var.network_type == "bridge" && var.create_network ? 1 : 0
 
   config = {
     "ipv4.address" = var.ipv4_address
@@ -37,8 +22,25 @@ resource "lxd_network" "bridge_network" {
   }
 }
 
+resource "lxd_network" "network" {
+  name = var.network_name
+  type = var.network_type
+
+  count = var.network_type == "macvlan" && var.create_network ? 1 : 0
+
+  config = var.network_type == "macvlan" ? {
+    parent = var.parent_interface
+  } : {}
+
+  lifecycle {
+    ignore_changes = [config]
+  }
+}
+
 resource "lxd_profile" "instance_profile" {
   name = "${var.instance_name}-profile"
+
+  depends_on = [lxd_network.bridge_network, lxd_network.network]
 
   config = {
     "user.user-data" = var.cloud_config != "" ? var.cloud_config : ""
@@ -51,7 +53,7 @@ resource "lxd_profile" "instance_profile" {
     type = "nic"
 
     properties = {
-      network = var.network_type == "macvlan" ? lxd_network.network[0].name : lxd_network.bridge_network[0].name
+      network = var.network_name
     }
   }
 
